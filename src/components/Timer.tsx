@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface TimerProps {
-  timeRemaining: number; // in seconds
+  timeRemaining: number;
   onTimeEnd?: () => void;
 }
 
 const Timer: React.FC<TimerProps> = ({ timeRemaining, onTimeEnd }) => {
   const [seconds, setSeconds] = useState(timeRemaining);
+  const timeEndCalled = useRef(false);
   
   useEffect(() => {
     setSeconds(timeRemaining);
+    timeEndCalled.current = false;
+    timeEndCalled.current = false;
   }, [timeRemaining]);
   
   useEffect(() => {
     if (seconds <= 0) {
-      if (onTimeEnd) onTimeEnd();
+      if (onTimeEnd && !timeEndCalled.current) {
+        timeEndCalled.current = true;
+        onTimeEnd();
+      }
       return;
     }
     
@@ -27,10 +33,7 @@ const Timer: React.FC<TimerProps> = ({ timeRemaining, onTimeEnd }) => {
     return () => clearInterval(timer);
   }, [seconds, onTimeEnd]);
   
-  // Calculate percentage for progress bar
   const percentage = (seconds / timeRemaining) * 100;
-  
-  // Determine color based on time remaining
   const getColor = () => {
     if (percentage > 66) return 'bg-green-500 dark:bg-green-600';
     if (percentage > 33) return 'bg-yellow-500 dark:bg-yellow-600';

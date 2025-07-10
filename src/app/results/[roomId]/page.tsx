@@ -22,19 +22,15 @@ export default function ResultsPage() {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // In a real app, you would fetch results from an API
     const fetchResults = async () => {
-      // Wait for a simulated API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data for demonstration
       const mockPlayers: Player[] = [
         { id: "player1", username: "Player 1", score: 850 },
         { id: "player2", username: "Player 2", score: 650 },
         { id: "player3", username: playerName, score: 450 },
       ];
       
-      // Sort players by score and assign ranks
       const sortedPlayers = [...mockPlayers]
         .sort((a, b) => b.score - a.score)
         .map((player, index) => ({
@@ -50,7 +46,6 @@ export default function ResultsPage() {
   }, [roomId, playerName]);
   
   const handlePlayAgain = () => {
-    // In a real app, you would create a new game with the same players
     router.push(`/create?name=${encodeURIComponent(playerName)}`);
   };
   

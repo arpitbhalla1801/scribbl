@@ -16,20 +16,37 @@ export default function JoinGamePage() {
     setIsLoading(true);
     setError("");
     
-    // Validate game code (for example, all uppercase and 6 characters)
-    if (!/^[A-Z0-9]{6}$/.test(gameCode)) {
-      setError("Invalid game code. Please check and try again.");
+    try {
+      if (!/^[A-Z0-9]{6}$/.test(gameCode)) {
+        throw new Error("Invalid game code. Please check and try again.");
+      }
+
+      if (!playerName.trim()) {
+        throw new Error("Player name is required.");
+      }
+
+      const response = await fetch(`/api/games/${gameCode}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          playerName: playerName.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to join game');
+      }
+
+      router.push(`/game/${gameCode}?playerId=${data.playerId}`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to join game');
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    // In a real implementation, you would validate the room code with the server
-    
-    // Wait for a simulated API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Navigate to the game room
-    router.push(`/game/${gameCode}?name=${encodeURIComponent(playerName)}`);
   };
   
   return (

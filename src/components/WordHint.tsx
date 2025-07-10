@@ -6,7 +6,6 @@ interface WordHintProps {
 }
 
 const WordHint: React.FC<WordHintProps> = ({ word, reveal = false }) => {
-  // If we should reveal the word, just show it
   if (reveal) {
     return (
       <div className="flex flex-col items-center py-4">
@@ -16,7 +15,6 @@ const WordHint: React.FC<WordHintProps> = ({ word, reveal = false }) => {
     );
   }
   
-  // Otherwise, show underscores for each letter
   const hints = word.split('').map((letter) => 
     letter === ' ' ? ' ' : '_'
   );

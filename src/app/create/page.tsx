@@ -16,18 +16,36 @@ export default function CreateGamePage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // TODO: Replace with actual API call to create game
-    // For now, we'll simulate creating a room with a random ID
-    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    // In a real implementation, you would make an API request to create a game room
-    // and pass all the game settings
-    
-    // Wait for a simulated API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Navigate to the game room
-    router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}&host=true`);
+    try {
+      const response = await fetch('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          playerName,
+          settings: {
+            rounds,
+            timePerRound,
+            difficulty,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create game');
+      }
+
+      // Navigate to the game room with the player ID
+      router.push(`/game/${data.roomId}?playerId=${data.playerId}&host=true`);
+    } catch (error) {
+      console.error('Failed to create game:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create game');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (

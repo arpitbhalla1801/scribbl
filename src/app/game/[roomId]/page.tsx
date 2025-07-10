@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { generateMessageId } from "@/lib/utils";
+import { GameAPI } from "@/lib/gameAPI";
 import Canvas from "@/components/Canvas";
 import ChatBox from "@/components/ChatBox";
 import PlayerList from "@/components/PlayerList";
 import WordHint from "@/components/WordHint";
 import GameHeader from "@/components/GameHeader";
 
-// Mock data for demonstration
 const MOCK_WORDS = ["apple", "banana", "elephant", "computer", "mountain", "rainbow", "bicycle"];
 
 interface Message {
@@ -32,7 +33,6 @@ export default function GamePage() {
   const playerName = searchParams.get("name") || "Guest";
   const isHost = searchParams.get("host") === "true";
 
-  // Game state
   const [connected, setConnected] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,26 +42,22 @@ export default function GamePage() {
   const [totalRounds, setTotalRounds] = useState(3);
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [playerId, setPlayerId] = useState("");
+  const welcomeMessageSent = useRef<string | null>(null);
+  const timeoutHandled = useRef(false);
 
   useEffect(() => {
-    // In a real app, you would connect to WebSocket here
-    // Simulate connection and initial game state
     const connectToGame = async () => {
-      // Wait for a simulated API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Generate a unique player ID
       const id = Math.random().toString(36).substring(2, 10);
       setPlayerId(id);
 
-      // For demo purposes, create mock players
       const mockPlayers: Player[] = [
         { id, username: playerName, score: 0, isDrawing: isHost },
         { id: "player2", username: "Player 2", score: 150 },
         { id: "player3", username: "Player 3", score: 300 },
       ];
 
-      // If host, set as drawing player and assign a random word
       if (isHost) {
         setIsDrawing(true);
         const randomWord = MOCK_WORDS[Math.floor(Math.random() * MOCK_WORDS.length)];
@@ -71,40 +67,35 @@ export default function GamePage() {
       setPlayers(mockPlayers);
       setConnected(true);
 
-      // Add a welcome message
-      addMessage("System", `Welcome to room ${roomId}!`);
+      if (welcomeMessageSent.current !== roomId) {
+        addMessage("System", `Welcome to room ${roomId}!`);
+        welcomeMessageSent.current = roomId;
+      }
     };
 
     connectToGame();
 
-    // Cleanup function for real WebSocket connection
     return () => {
-      // In a real app, you would disconnect from WebSocket here
     };
   }, [roomId, playerName, isHost]);
 
-  // Add a new message to the chat
   const addMessage = (username: string, text: string, isCorrect: boolean = false) => {
     const newMessage: Message = {
-      id: Date.now(),
+      id: generateMessageId(),
       username,
       text,
       isCorrect,
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prevMessages => [...prevMessages, newMessage]);
   };
 
-  // Handle sending a chat message
   const handleSendMessage = (message: string) => {
     addMessage(playerName, message);
 
-    // Check if the message is the correct word
     if (!isDrawing && message.toLowerCase() === currentWord.toLowerCase()) {
-      // Calculate score based on time remaining
       const score = timeRemaining * 10;
       
-      // Update player score
       setPlayers(prev => 
         prev.map(player => 
           player.id === playerId 
@@ -113,21 +104,41 @@ export default function GamePage() {
         )
       );
 
-      // Add a system message
       addMessage("System", `${playerName} guessed the word correctly! +${score} points`, true);
     }
   };
 
-  // Handle when drawing data changes
   const handleDrawingChange = (imageData: string) => {
-    // In a real app, you would send this data over WebSocket
     console.log("Drawing updated:", imageData.substring(0, 50) + "...");
   };
 
   // Handle when timer ends
-  const handleTimeEnd = () => {
-    // In a real app, you would handle round end logic
-    addMessage("System", `Time's up! The word was "${currentWord}"`);
+  const handleTimeEnd = async () => {
+    // Prevent multiple calls
+    if (timeoutHandled.current) return;
+    timeoutHandled.current = true;
+
+    try {
+      // Add system message about time being up
+      addMessage("System", `Time's up! The word was "${currentWord}"`);
+      
+      // Call the backend to handle timeout
+      const result = await GameAPI.handleTimeOut(roomId);
+      
+      if (result.success && result.gameState) {
+        // Update game state based on server response
+        // In a real app, you'd update the UI based on the new game state
+        console.log('Round ended due to timeout:', result.gameState);
+        
+        // Reset timeout flag for next round
+        setTimeout(() => {
+          timeoutHandled.current = false;
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error handling timeout:', error);
+      timeoutHandled.current = false;
+    }
   };
 
   if (!connected) {

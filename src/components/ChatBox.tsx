@@ -26,7 +26,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    // Scroll to bottom whenever messages change
     scrollToBottom();
   }, [messages]);
   

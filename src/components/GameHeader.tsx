@@ -38,7 +38,6 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         </div>
       </div>
       <div className="w-full sm:w-1/3">
-        <Timer timeRemaining={timeRemaining} onTimeEnd={onTimeEnd} />
       </div>
     </div>
   );

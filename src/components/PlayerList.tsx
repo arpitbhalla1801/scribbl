@@ -13,7 +13,6 @@ interface PlayerListProps {
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ players, currentPlayerId }) => {
-  // Sort players by score (highest first)
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   
   return (

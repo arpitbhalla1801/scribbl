@@ -18,7 +18,6 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
   const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
   const brushSizes = [1, 3, 5, 8, 12];
   
-  // Initialize canvas context
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,7 +25,6 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     const context = canvas.getContext('2d');
     if (!context) return;
     
-    // Set canvas size to match parent container
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       if (parent) {
@@ -34,7 +32,6 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
         canvas.height = parent.clientHeight;
       }
       
-      // Set background to white
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
     };
@@ -48,19 +45,16 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     };
   }, []);
   
-  // Clear canvas function
   const clearCanvas = () => {
     if (!ctx || !canvasRef.current) return;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     
-    // Send drawing data if callback provided
     if (onDrawingChange && canvasRef.current) {
       onDrawingChange(canvasRef.current.toDataURL());
     }
   };
   
-  // Draw functions
   const startDrawing = (x: number, y: number) => {
     if (!isDrawing || !ctx) return;
     
@@ -82,7 +76,6 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     ctx.stroke();
     setLastPoint({ x, y });
     
-    // Send drawing data if callback provided
     if (onDrawingChange && canvasRef.current) {
       onDrawingChange(canvasRef.current.toDataURL());
     }
@@ -96,7 +89,6 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     ctx.closePath();
   };
   
-  // Mouse event handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
