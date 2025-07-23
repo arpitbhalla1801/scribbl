@@ -26,8 +26,6 @@ export interface GameState {
   players: Player[];
   settings: GameSettings;
   currentRound: number;
-  currentTurn: number; // Track which turn within the round
-  totalTurns: number; // Total turns needed (players * rounds)
   currentWord?: string;
   currentDrawer?: string;
   timeRemaining: number;
@@ -40,7 +38,6 @@ export interface GameState {
     isCorrect: boolean;
   }>;
   roundScores: Record<string, number>;
-  drawingOrder: string[]; // Order in which players will draw
   createdAt: number;
   lastActivity: number;
 }

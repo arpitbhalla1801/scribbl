@@ -1,4 +1,4 @@
-import { GameState, Player, GameSettings, DrawingStroke } from './types';
+import { GameState, Player, GameSettings, DrawingStroke, DrawingUpdate } from './types';
 import { getRandomWords } from './words';
 
 // In-memory storage for games (in production, you'd use a database)
@@ -20,10 +20,13 @@ export class GameManager {
       players: [host],
       settings,
       currentRound: 0,
+      currentTurn: 0,
+      totalTurns: 0, // Will be set when game starts
       timeRemaining: 0,
       drawing: [],
       guesses: [],
       roundScores: {},
+      drawingOrder: [],
       createdAt: Date.now(),
       lastActivity: Date.now(),
     };
@@ -85,23 +88,31 @@ export class GameManager {
 
     game.status = 'playing';
     game.currentRound = 1;
-    this.startRound(game);
+    game.currentTurn = 1;
+    
+    // Set up drawing order: each player draws once per round
+    const onlinePlayers = game.players.filter(p => p.isOnline);
+    game.drawingOrder = [...onlinePlayers.map(p => p.id)];
+    game.totalTurns = onlinePlayers.length * game.settings.rounds;
+    
+    this.startTurn(game);
 
     return { success: true };
   }
 
-  static startRound(game: GameState): void {
-    // Reset round state
+  static startTurn(game: GameState): void {
+    // Reset turn state
     game.drawing = [];
     game.guesses = [];
     game.roundScores = {};
     game.timeRemaining = game.settings.timePerRound;
 
-    // Choose random drawer (excluding previous drawer if possible)
-    const availableDrawers = game.players.filter(p => p.isOnline);
-    if (availableDrawers.length > 0) {
-      const randomIndex = Math.floor(Math.random() * availableDrawers.length);
-      game.currentDrawer = availableDrawers[randomIndex].id;
+    // Calculate which player should draw based on current turn
+    const onlinePlayers = game.players.filter(p => p.isOnline);
+    const playerIndex = (game.currentTurn - 1) % onlinePlayers.length;
+    
+    if (onlinePlayers.length > 0) {
+      game.currentDrawer = onlinePlayers[playerIndex].id;
     }
 
     // Choose random word based on difficulty
@@ -111,104 +122,189 @@ export class GameManager {
     game.lastActivity = Date.now();
   }
 
-  static submitGuess(roomId: string, playerId: string, guess: string): { success: boolean; isCorrect: boolean; error?: string } {
-    const game = games.get(roomId);
-    if (!game) {
-      return { success: false, isCorrect: false, error: 'Game not found' };
-    }
-
-    if (game.status !== 'playing') {
-      return { success: false, isCorrect: false, error: 'Game not in progress' };
-    }
-
-    if (playerId === game.currentDrawer) {
-      return { success: false, isCorrect: false, error: 'Drawer cannot guess' };
-    }
-
-    const player = game.players.find(p => p.id === playerId);
-    if (!player) {
-      return { success: false, isCorrect: false, error: 'Player not found' };
-    }
-
-    // Check if player already guessed correctly this round
-    const hasCorrectGuess = game.guesses.some(g => g.playerId === playerId && g.isCorrect);
-    if (hasCorrectGuess) {
-      return { success: false, isCorrect: false, error: 'Already guessed correctly' };
-    }
-
-    const isCorrect = guess.toLowerCase().trim() === game.currentWord?.toLowerCase().trim();
-    
-    game.guesses.push({
-      playerId,
-      playerName: player.name,
-      guess,
-      timestamp: Date.now(),
-      isCorrect,
-    });
-
-    if (isCorrect) {
-      // Award points based on position and time remaining
-      const correctGuesses = game.guesses.filter(g => g.isCorrect).length;
-      const timeBonus = Math.floor(game.timeRemaining / 10);
-      const positionBonus = Math.max(0, 100 - (correctGuesses - 1) * 20);
-      const points = positionBonus + timeBonus;
-
-      player.score += points;
-      game.roundScores[playerId] = points;
-
-      // Award points to drawer if someone guesses correctly
-      const drawer = game.players.find(p => p.id === game.currentDrawer);
-      if (drawer && correctGuesses === 1) {
-        const drawerPoints = Math.floor(points * 0.5);
-        drawer.score += drawerPoints;
-        game.roundScores[game.currentDrawer!] = drawerPoints;
-      }
-    }
-
-    game.lastActivity = Date.now();
-
-    // Check if everyone (except drawer) has guessed correctly
-    const nonDrawers = game.players.filter(p => p.id !== game.currentDrawer && p.isOnline);
-    const correctGuessers = game.guesses.filter(g => g.isCorrect).map(g => g.playerId);
-    const allGuessedCorrect = nonDrawers.every(p => correctGuessers.includes(p.id));
-
-    if (allGuessedCorrect) {
-      this.endRound(game);
-    }
-
-    return { success: true, isCorrect };
-  }
-
-  static updateDrawing(roomId: string, playerId: string, strokes: DrawingStroke[]): { success: boolean; error?: string } {
+  static updateDrawing(roomId: string, update: DrawingUpdate): { success: boolean; gameState?: GameState; error?: string } {
     const game = games.get(roomId);
     if (!game) {
       return { success: false, error: 'Game not found' };
     }
 
-    if (game.currentDrawer !== playerId) {
-      return { success: false, error: 'Only the current drawer can draw' };
+    if (game.status !== 'playing') {
+      return { success: false, error: 'Game not in progress' };
     }
 
-    game.drawing = strokes;
+    // Add the drawing stroke to the game state
+    if (update.type === 'stroke' && update.stroke) {
+      game.drawing.push(update.stroke);
+    } else if (update.type === 'clear') {
+      game.drawing = [];
+    }
+
     game.lastActivity = Date.now();
+
+    return { success: true, gameState: game };
+  }
+
+  static submitGuess(roomId: string, playerId: string, guess: string): { 
+    success: boolean; 
+    isCorrect?: boolean; 
+    gameState?: GameState; 
+    error?: string 
+  } {
+    const game = games.get(roomId);
+    if (!game) {
+      return { success: false, error: 'Game not found' };
+    }
+
+    if (game.status !== 'playing') {
+      return { success: false, error: 'Game not in progress' };
+    }
+
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) {
+      return { success: false, error: 'Player not found' };
+    }
+
+    // Don't allow the current drawer to guess
+    if (game.currentDrawer === playerId) {
+      return { success: false, error: 'Drawer cannot guess' };
+    }
+
+    // Check if player already guessed correctly this round
+    if (game.guesses.some(g => g.playerId === playerId && g.isCorrect)) {
+      return { success: false, error: 'Already guessed correctly' };
+    }
+
+    const isCorrect = guess.toLowerCase().trim() === game.currentWord?.toLowerCase().trim();
+    
+    // Add guess to game state
+    game.guesses.push({
+      playerId,
+      playerName: player.name,
+      guess: guess.trim(),
+      isCorrect,
+      timestamp: Date.now(),
+    });
+
+    // Award points if correct
+    if (isCorrect) {
+      const timeBonus = Math.max(0, game.timeRemaining);
+      const points = Math.floor(100 + (timeBonus * 2));
+      
+      player.score += points;
+      
+      // Add to round scores
+      if (!game.roundScores[playerId]) {
+        game.roundScores[playerId] = 0;
+      }
+      game.roundScores[playerId] += points;
+
+      // Award points to drawer too
+      const drawer = game.players.find(p => p.id === game.currentDrawer);
+      if (drawer) {
+        const drawerPoints = Math.floor(points * 0.5);
+        drawer.score += drawerPoints;
+        
+        if (!game.roundScores[drawer.id]) {
+          game.roundScores[drawer.id] = 0;
+        }
+        game.roundScores[drawer.id] += drawerPoints;
+      }
+
+      // Check if all players have guessed correctly
+      const eligiblePlayers = game.players.filter(p => p.id !== game.currentDrawer && p.isOnline);
+      const correctGuesses = game.guesses.filter(g => g.isCorrect);
+      
+      if (correctGuesses.length >= eligiblePlayers.length) {
+        // End turn early - everyone guessed correctly
+        this.endTurn(game);
+      }
+    }
+
+    game.lastActivity = Date.now();
+
+    return { success: true, isCorrect, gameState: game };
+  }
+
+  static setPlayerOffline(roomId: string, playerId: string): void {
+    const game = games.get(roomId);
+    if (!game) return;
+
+    const player = game.players.find(p => p.id === playerId);
+    if (player) {
+      player.isOnline = false;
+      game.lastActivity = Date.now();
+    }
+  }
+
+  static setPlayerOnline(roomId: string, playerId: string): void {
+    const game = games.get(roomId);
+    if (!game) return;
+
+    const player = game.players.find(p => p.id === playerId);
+    if (player) {
+      player.isOnline = true;
+      game.lastActivity = Date.now();
+    }
+  }
+
+  static leaveGame(roomId: string, playerId: string): { success: boolean; error?: string } {
+    const game = games.get(roomId);
+    if (!game) {
+      return { success: false, error: 'Game not found' };
+    }
+
+    const playerIndex = game.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) {
+      return { success: false, error: 'Player not found' };
+    }
+
+    const leavingPlayer = game.players[playerIndex];
+    
+    // Remove player from game
+    game.players.splice(playerIndex, 1);
+    
+    // If the leaving player was the host, assign new host
+    if (leavingPlayer.isHost && game.players.length > 0) {
+      game.players[0].isHost = true;
+    }
+
+    // If the leaving player was the current drawer, end the turn
+    if (game.currentDrawer === playerId && game.status === 'playing') {
+      this.endTurn(game);
+    }
+
+    // Clean up empty games
+    if (game.players.length === 0) {
+      games.delete(roomId);
+    } else {
+      game.lastActivity = Date.now();
+    }
 
     return { success: true };
   }
 
-  static endRound(game: GameState): void {
-    // Prevent infinite loops - ensure we don't exceed max rounds
-    if (game.currentRound >= game.settings.rounds) {
+  static endTurn(game: GameState): void {
+    // Check if all turns are completed
+    if (game.currentTurn >= game.totalTurns) {
+      // Game is finished
       game.status = 'finished';
       game.timeRemaining = 0;
+      game.currentDrawer = undefined;
+      game.currentWord = undefined;
+      console.log(`Game ${game.roomId} finished after ${game.currentTurn} turns`);
     } else {
-      // Move to next round
-      game.currentRound++;
+      // Move to next turn
+      game.currentTurn++;
       
-      // Only start next round if game is still playing
-      if (game.status === 'playing') {
-        this.startRound(game);
-      }
+      // Update current round number for display
+      const onlinePlayers = game.players.filter(p => p.isOnline);
+      game.currentRound = Math.ceil(game.currentTurn / onlinePlayers.length);
+      
+      // Start next turn
+      this.startTurn(game);
     }
+    
+    game.lastActivity = Date.now();
   }
 
   static handleTimeOut(roomId: string): { success: boolean; gameState?: GameState; error?: string } {
@@ -221,12 +317,12 @@ export class GameManager {
       return { success: false, error: 'Game not in progress' };
     }
 
-    // Set time to 0 to indicate round is over
+    // Set time to 0 to indicate turn is over
     game.timeRemaining = 0;
     game.lastActivity = Date.now();
 
-    // End the current round
-    this.endRound(game);
+    // End the current turn
+    this.endTurn(game);
 
     return { success: true, gameState: game };
   }

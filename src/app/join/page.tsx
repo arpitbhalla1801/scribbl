@@ -41,7 +41,7 @@ export default function JoinGamePage() {
         throw new Error(data.error || 'Failed to join game');
       }
 
-      router.push(`/game/${gameCode}?playerId=${data.playerId}`);
+      router.push(`/game/${gameCode}?playerId=${data.playerId}&name=${encodeURIComponent(playerName.trim())}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to join game');
     } finally {

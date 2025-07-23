@@ -9,6 +9,8 @@ interface GameHeaderProps {
   totalRounds: number;
   timeRemaining: number;
   onTimeEnd?: () => void;
+  currentTurn?: number;
+  totalTurns?: number;
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
@@ -16,7 +18,9 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   roundNumber,
   totalRounds,
   timeRemaining,
-  onTimeEnd
+  onTimeEnd,
+  currentTurn,
+  totalTurns
 }) => {
   return (
     <div className="card p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -36,6 +40,11 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         <div className="font-medium">
           Round: <span className="font-bold">{roundNumber}</span> of {totalRounds}
         </div>
+        {currentTurn && totalTurns && (
+          <div className="font-medium">
+            Turn: <span className="font-bold">{currentTurn}</span> of {totalTurns}
+          </div>
+        )}
       </div>
       <div className="w-full sm:w-1/3">
       </div>

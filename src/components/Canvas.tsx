@@ -1,19 +1,22 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { GameState, DrawingUpdate, DrawingStroke } from "@/lib/types";
 
 interface CanvasProps {
   isDrawing: boolean;
-  onDrawingChange?: (imageData: string) => void;
+  onDrawingChange?: (imageData: string, update: DrawingUpdate) => void;
+  gameState?: GameState;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
+const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange, gameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawingNow, setIsDrawingNow] = useState(false);
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const [lastPoint, setLastPoint] = useState<{ x: number; y: number } | null>(null);
   const [currentColor, setCurrentColor] = useState("#000000");
   const [brushSize, setBrushSize] = useState(3);
+  const [currentStroke, setCurrentStroke] = useState<DrawingStroke | null>(null);
   
   const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
   const brushSizes = [1, 3, 5, 8, 12];
@@ -45,13 +48,44 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     };
   }, []);
   
+  // Effect to render drawing strokes from game state
+  useEffect(() => {
+    if (!ctx || !gameState) return;
+    
+    // Clear canvas first
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+    
+    // Render all strokes from game state
+    gameState.drawing.forEach(stroke => {
+      if (stroke.points.length < 2) return;
+      
+      ctx.beginPath();
+      ctx.lineWidth = stroke.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = stroke.color;
+      
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    });
+  }, [ctx, gameState?.drawing]);
+  
   const clearCanvas = () => {
-    if (!ctx || !canvasRef.current) return;
+    if (!ctx || !canvasRef.current || !isDrawing) return;
+    
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     
     if (onDrawingChange && canvasRef.current) {
-      onDrawingChange(canvasRef.current.toDataURL());
+      const clearUpdate: DrawingUpdate = {
+        playerId: '', // Will be set by the calling component
+        type: 'clear'
+      };
+      onDrawingChange(canvasRef.current.toDataURL(), clearUpdate);
     }
   };
   
@@ -60,6 +94,17 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
     
     setIsDrawingNow(true);
     setLastPoint({ x, y });
+    
+    // Create new stroke
+    const newStroke: DrawingStroke = {
+      id: `stroke-${Date.now()}`,
+      points: [{ x, y }],
+      color: currentColor,
+      width: brushSize,
+      timestamp: Date.now()
+    };
+    
+    setCurrentStroke(newStroke);
     
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
@@ -70,23 +115,38 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange }) => {
   };
   
   const draw = (x: number, y: number) => {
-    if (!isDrawing || !isDrawingNow || !ctx || !lastPoint) return;
+    if (!isDrawing || !isDrawingNow || !ctx || !lastPoint || !currentStroke) return;
     
     ctx.lineTo(x, y);
     ctx.stroke();
     setLastPoint({ x, y });
     
-    if (onDrawingChange && canvasRef.current) {
-      onDrawingChange(canvasRef.current.toDataURL());
-    }
+    // Add point to current stroke
+    const updatedStroke = {
+      ...currentStroke,
+      points: [...currentStroke.points, { x, y }]
+    };
+    setCurrentStroke(updatedStroke);
   };
   
   const endDrawing = () => {
-    if (!isDrawing || !ctx) return;
+    if (!isDrawing || !ctx || !currentStroke) return;
     
     setIsDrawingNow(false);
     setLastPoint(null);
     ctx.closePath();
+    
+    // Send the completed stroke
+    if (onDrawingChange && canvasRef.current && currentStroke.points.length > 1) {
+      const strokeUpdate: DrawingUpdate = {
+        playerId: '', // Will be set by the calling component
+        type: 'stroke',
+        stroke: currentStroke
+      };
+      onDrawingChange(canvasRef.current.toDataURL(), strokeUpdate);
+    }
+    
+    setCurrentStroke(null);
   };
   
   const handleMouseDown = (e: React.MouseEvent) => {

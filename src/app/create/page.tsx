@@ -38,8 +38,8 @@ export default function CreateGamePage() {
         throw new Error(data.error || 'Failed to create game');
       }
 
-      // Navigate to the game room with the player ID
-      router.push(`/game/${data.roomId}?playerId=${data.playerId}&host=true`);
+      // Navigate to the game room with the player ID and name
+      router.push(`/game/${data.roomId}?playerId=${data.playerId}&name=${encodeURIComponent(playerName)}`);
     } catch (error) {
       console.error('Failed to create game:', error);
       alert(error instanceof Error ? error.message : 'Failed to create game');
