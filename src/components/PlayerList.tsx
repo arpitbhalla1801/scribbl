@@ -16,34 +16,32 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, currentPlayerId }) => 
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   
   return (
-    <div className="card">
-      <div className="p-3 border-b border-card-border font-medium">
-        Players
+    <div className="card h-full">
+      <div className="p-3 border-b border-card-border text-sm text-gray-600 dark:text-gray-400">
+        Players ({players.length})
       </div>
-      <div className="divide-y divide-card-border">
-        {sortedPlayers.map((player) => (
+      
+      <div className="divide-y divide-card-border max-h-64 overflow-y-auto">
+        {sortedPlayers.map((player, index) => (
           <div 
             key={player.id}
-            className={`flex items-center justify-between p-3 ${
-              player.id === currentPlayerId ? "bg-primary/5 dark:bg-primary/10" : ""
+            className={`flex items-center justify-between p-3 text-sm ${
+              player.id === currentPlayerId ? "bg-gray-50 dark:bg-gray-800" : ""
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="font-medium">
+              <span className="w-5 text-center text-xs text-gray-500 dark:text-gray-500">
+                {index + 1}
+              </span>
+              <span className={`${player.isDrawing ? 'font-medium' : ''}`}>
                 {player.username}
-                {player.username === players.find(p => p.id === currentPlayerId)?.username && (
-                  <span className="ml-2 text-xs bg-primary/10 text-primary dark:text-primary-light px-2 py-0.5 rounded">
-                    You
-                  </span>
-                )}
-                {player.isDrawing && (
-                  <span className="ml-2 text-xs bg-accent/10 text-accent dark:text-accent-dark px-2 py-0.5 rounded">
-                    Drawing
-                  </span>
-                )}
-              </div>
+                {player.id === currentPlayerId && ' (you)'}
+              </span>
+              {player.isDrawing && (
+                <span className="text-xs text-blue-600 dark:text-blue-400">drawing</span>
+              )}
             </div>
-            <div className="font-bold">{player.score}</div>
+            <span className="font-mono text-xs">{player.score}</span>
           </div>
         ))}
       </div>

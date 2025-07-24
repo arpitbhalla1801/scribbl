@@ -177,10 +177,10 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange, gameState }
   };
   
   return (
-    <div className="canvas-container relative w-full h-full border border-gray-300 rounded-lg bg-white">
+    <div className="canvas-container relative w-full h-full rounded-lg bg-white overflow-hidden">
       <canvas
         ref={canvasRef}
-        className="w-full h-full"
+        className="w-full h-full cursor-crosshair"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={endDrawing}
@@ -189,43 +189,81 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange, gameState }
         onTouchMove={handleTouchMove}
         onTouchEnd={endDrawing}
       />
+      
+      {/* Drawing Tools - Only show when user is drawing */}
       {isDrawing && (
-        <div className="absolute bottom-4 left-4 right-4 p-2 bg-white bg-opacity-90 dark:bg-gray-800 dark:bg-opacity-90 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg flex flex-wrap justify-between items-center">
-          <div className="flex space-x-1">
-            {colors.map((color) => (
-              <button
-                key={color}
-                className={`w-8 h-8 rounded-full ${currentColor === color ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
-                style={{ backgroundColor: color }}
-                onClick={() => setCurrentColor(color)}
-                aria-label={`Select ${color} color`}
-              />
-            ))}
+        <div className="absolute bottom-3 left-3 right-3">
+          <div className="card p-3 bg-white dark:bg-gray-900">
+            <div className="flex flex-col gap-3">
+              {/* Color Palette */}
+              <div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Colors</div>
+                <div className="flex gap-1">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      className={`w-6 h-6 rounded-full border-2 transition-colors ${
+                        currentColor === color 
+                          ? 'border-gray-900 dark:border-gray-100' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setCurrentColor(color)}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Bottom row with brush sizes and clear button */}
+              <div className="flex justify-between items-center gap-3">
+                {/* Brush Sizes */}
+                <div className="flex-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Size</div>
+                  <div className="flex gap-1">
+                    {brushSizes.map((size) => (
+                      <button
+                        key={size}
+                        className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
+                          brushSize === size 
+                            ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' 
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                        onClick={() => setBrushSize(size)}
+                      >
+                        <div 
+                          className="rounded-full bg-current" 
+                          style={{ width: Math.max(2, size/2), height: Math.max(2, size/2) }}
+                        ></div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Clear Button */}
+                <div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Actions</div>
+                  <button 
+                    className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-3 py-1 text-sm rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                    onClick={clearCanvas}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex space-x-1">
-            {brushSizes.map((size) => (
-              <button
-                key={size}
-                className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                  brushSize === size 
-                    ? 'bg-primary text-white' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                }`}
-                onClick={() => setBrushSize(size)}
-                aria-label={`Brush size ${size}`}
-              >
-                <div className="rounded-full bg-current" style={{ width: size, height: size }}></div>
-              </button>
-            ))}
+        </div>
+      )}
+      
+      {/* Non-drawer overlay */}
+      {!isDrawing && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 dark:bg-gray-800/50">
+          <div className="text-center card p-6 bg-white/90 dark:bg-gray-900/90">
+            <div className="text-gray-600 dark:text-gray-400 mb-2">Watch & Guess</div>
+            <div className="text-sm text-gray-500 dark:text-gray-500">
+              Someone else is drawing
+            </div>
           </div>
-          
-          <button 
-            className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 px-3 py-1 rounded"
-            onClick={clearCanvas}
-          >
-            Clear
-          </button>
         </div>
       )}
     </div>

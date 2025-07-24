@@ -52,9 +52,10 @@ export default function ResultsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="mb-4 text-2xl font-bold">Loading results...</div>
-          <div className="animate-spin h-10 w-10 border-4 border-primary rounded-full border-t-transparent mx-auto"></div>
+        <div className="text-center card p-8 max-w-md w-full mx-4">
+          <div className="animate-spin h-8 w-8 border-2 border-gray-900 dark:border-gray-100 rounded-full border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">Loading Results</h2>
+          <p className="text-gray-600 dark:text-gray-400">Calculating scores...</p>
         </div>
       </div>
     );
@@ -64,47 +65,47 @@ export default function ResultsPage() {
     <div className="container mx-auto p-6 max-w-2xl min-h-screen flex flex-col items-center justify-center">
       <div className="w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Game Results</h1>
-          <p className="text-gray-600 dark:text-gray-300">Room: {roomId}</p>
+          <h1 className="text-3xl font-medium mb-4 text-gray-900 dark:text-gray-100">Game Complete</h1>
+          <p className="text-gray-600 dark:text-gray-400">Room: <span className="font-medium text-gray-900 dark:text-gray-100">{roomId}</span></p>
         </div>
         
-        <div className="card mb-8 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">Final Scores</h2>
-            
-            <div className="space-y-4">
+        <div className="card mb-8">
+          <div className="p-4 border-b border-card-border">
+            <h2 className="text-lg font-medium text-center text-gray-900 dark:text-gray-100">Final Rankings</h2>
+          </div>
+          
+          <div className="p-4">
+            <div className="space-y-3">
               {players.map((player) => (
                 <div 
                   key={player.id}
-                  className={`flex items-center p-4 rounded-lg ${
+                  className={`flex items-center justify-between p-3 rounded ${
                     player.rank === 1 
-                      ? 'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800' 
+                      ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800' 
                       : 'bg-gray-50 dark:bg-gray-800/30'
                   }`}
                 >
-                  <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full font-bold ${
-                    player.rank === 1 
-                      ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200' 
-                      : player.rank === 2 
-                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' 
-                        : player.rank === 3 
-                          ? 'bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200' 
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
-                  }`}>
-                    {player.rank}
-                  </div>
-                  <div className="ml-4 flex-grow">
-                    <div className="font-semibold text-lg">
-                      {player.username}
-                      {player.username === playerName && (
-                        <span className="ml-2 text-xs bg-primary/10 text-primary dark:bg-primary/20 px-2 py-0.5 rounded">
-                          You
-                        </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 font-medium text-sm">
+                      {player.rank}
+                    </div>
+                    
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {player.username}
+                        {player.username === playerName && (
+                          <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">(you)</span>
+                        )}
+                      </div>
+                      {player.rank === 1 && (
+                        <div className="text-xs text-yellow-700 dark:text-yellow-300">Winner</div>
                       )}
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">
-                    {player.score}
+                  
+                  <div className="text-right">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{player.score}</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">points</div>
                   </div>
                 </div>
               ))}
@@ -112,16 +113,16 @@ export default function ResultsPage() {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={handlePlayAgain}
-            className="btn-primary py-3 px-8"
+            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Play Again
           </button>
           <Link
             href="/"
-            className="btn-secondary py-3 px-8 text-center"
+            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-center"
           >
             Return Home
           </Link>

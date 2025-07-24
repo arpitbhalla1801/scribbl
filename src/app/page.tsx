@@ -1,25 +1,24 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black">
       <main className="flex-1 flex flex-col items-center justify-center p-8">
-        <div className="max-w-3xl w-full flex flex-col items-center text-center">
-          <h1 className="text-5xl font-bold mb-4">Scribbl</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-lg">
-            Draw, guess, and have fun with friends! An online multiplayer drawing and guessing game.
+        <div className="max-w-md w-full text-center">
+          <h1 className="text-6xl font-light mb-8 text-gray-900 dark:text-white">Scribbl</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-12 text-lg">
+            Draw. Guess. Play.
           </p>
           
-          <div className="flex gap-5 mt-6 flex-col sm:flex-row w-full max-w-md">
+          <div className="space-y-4">
             <Link
-              className="btn-primary flex items-center justify-center gap-2 py-4 px-8 text-center w-full"
+              className="btn-primary w-full text-lg py-4"
               href="/create"
             >
               Create Game
             </Link>
             <Link
-              className="btn-secondary flex items-center justify-center gap-2 py-4 px-8 text-center w-full"
+              className="btn-secondary w-full text-lg py-4"
               href="/join"
             >
               Join Game
@@ -27,9 +26,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <footer className="p-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">© 2025 Scribbl Game</p>
-      </footer>
     </div>
   );
 }

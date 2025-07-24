@@ -140,8 +140,8 @@ export default function GamePage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="mb-4 text-2xl font-bold">Connecting to game...</div>
-          <div className="animate-spin h-10 w-10 border-4 border-primary rounded-full border-t-transparent mx-auto"></div>
+          <div className="animate-spin h-8 w-8 border-2 border-gray-300 dark:border-gray-700 rounded-full border-t-black dark:border-t-white mx-auto mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400">Connecting...</div>
         </div>
       </div>
     );
@@ -150,15 +150,22 @@ export default function GamePage() {
   if (connectionStatus === 'error') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="mb-4 text-2xl font-bold text-red-600">Connection Error</div>
-          <div className="mb-4 text-gray-600">Unable to connect to the game</div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Retry
-          </button>
+        <div className="text-center card p-6 max-w-sm mx-4">
+          <div className="text-red-500 dark:text-red-400 mb-4">Connection failed</div>
+          <div className="space-y-3">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="w-full btn-primary"
+            >
+              Retry
+            </button>
+            <button 
+              onClick={() => router.push('/')} 
+              className="w-full btn-secondary"
+            >
+              Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -168,7 +175,8 @@ export default function GamePage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="mb-4 text-2xl font-bold">Loading game...</div>
+          <div className="animate-spin h-8 w-8 border-2 border-gray-300 dark:border-gray-700 rounded-full border-t-black dark:border-t-white mx-auto mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
         </div>
       </div>
     );
@@ -180,37 +188,77 @@ export default function GamePage() {
     
     return (
       <div className="container mx-auto p-4 max-w-4xl min-h-screen flex flex-col items-center justify-center">
-        <div className="card p-8 text-center max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-6">Game Finished!</h1>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Final Scores</h2>
-            <div className="space-y-3">
+        <div className="card p-8 w-full max-w-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4 text-primary">🎉 Game Finished!</h1>
+            <p className="text-secondary text-lg">Thanks for playing in room {roomId}</p>
+          </div>
+          
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-6 text-center text-primary">🏆 Final Scores</h2>
+            <div className="space-y-4">
               {sortedPlayers.map((player, index) => (
-                <div key={player.id} className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold">#{index + 1}</span>
-                    <span className={`font-medium ${player.id === playerId ? 'text-blue-600' : ''}`}>
-                      {player.name}
-                      {player.id === playerId && ' (You)'}
-                    </span>
+                <div 
+                  key={player.id} 
+                  className={`flex items-center justify-between p-4 rounded-xl transition-all ${
+                    index === 0 
+                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-700' 
+                      : index === 1 
+                        ? 'bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 border-2 border-gray-200 dark:border-gray-600' 
+                        : index === 2 
+                          ? 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-200 dark:border-orange-700' 
+                          : 'bg-gray-50 dark:bg-gray-800/20 border border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full font-bold text-lg ${
+                      index === 0 
+                        ? 'bg-yellow-400 text-yellow-900 shadow-lg' 
+                        : index === 1 
+                          ? 'bg-gray-300 text-gray-700 shadow-md' 
+                          : index === 2 
+                            ? 'bg-orange-300 text-orange-900 shadow-md' 
+                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
+                    }`}>
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                    </div>
+                    <div>
+                      <div className={`font-bold text-lg ${
+                        player.id === playerId ? 'text-primary' : 'text-primary'
+                      }`}>
+                        {player.name}
+                        {player.id === playerId && (
+                          <span className="ml-2 text-sm bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+                            You
+                          </span>
+                        )}
+                      </div>
+                      {index === 0 && (
+                        <div className="text-sm text-secondary font-medium">Winner! 🎊</div>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-lg font-bold">{player.score} pts</span>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">{player.score}</div>
+                    <div className="text-sm text-secondary">points</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="space-y-3">
+          
+          <div className="space-y-4">
             <button
               onClick={() => router.push('/')}
-              className="w-full py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+              className="w-full btn-primary text-lg py-4"
             >
-              Play Again
+              🎮 Play Again
             </button>
             <button
               onClick={() => router.push('/')}
-              className="w-full py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="w-full btn-secondary text-lg py-3"
             >
-              Back to Home
+              🏠 Back to Home
             </button>
           </div>
         </div>
@@ -221,31 +269,62 @@ export default function GamePage() {
   // Show waiting room if game hasn't started
   if (gameState.status === 'waiting') {
     return (
-      <div className="container mx-auto p-4 max-w-4xl min-h-screen flex flex-col items-center justify-center">
-        <div className="card p-8 text-center max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-6">Room {roomId}</h1>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Players ({gameState.players.length}/8)</h2>
+      <div className="container mx-auto p-4 max-w-md min-h-screen flex flex-col items-center justify-center">
+        <div className="card p-8 w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">Room {roomId}</h1>
+            <p className="text-gray-500 dark:text-gray-500">Waiting for players...</p>
+          </div>
+          
+          <div className="mb-8">
+            <div className="text-sm text-gray-500 dark:text-gray-500 mb-4 text-center">
+              {gameState.players.length}/8 players
+            </div>
+            
             <div className="space-y-2">
-              {gameState.players.map((player) => (
-                <div key={player.id} className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                  <span>{player.name}</span>
-                  {player.isHost && <span className="text-sm text-blue-600 font-medium">Host</span>}
+              {gameState.players.map((player, index) => (
+                <div 
+                  key={player.id} 
+                  className={`flex items-center justify-between p-3 rounded-md ${
+                    player.id === playerId 
+                      ? 'bg-gray-100 dark:bg-gray-800' 
+                      : 'bg-gray-50 dark:bg-gray-900'
+                  }`}
+                >
+                  <span className="text-sm">{player.name}</span>
+                  {player.isHost && (
+                    <span className="text-xs text-gray-500 dark:text-gray-500">Host</span>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-          {isHost && gameState.players.length >= 2 && (
+          
+          <div className="space-y-3">
+            {isHost && gameState.players.length >= 2 ? (
+              <button
+                onClick={handleStartGame}
+                className="w-full btn-primary"
+              >
+                Start Game
+              </button>
+            ) : isHost ? (
+              <div className="w-full py-3 text-center text-gray-500 dark:text-gray-500 text-sm">
+                Need at least 2 players
+              </div>
+            ) : (
+              <div className="w-full py-3 text-center text-gray-500 dark:text-gray-500 text-sm">
+                Waiting for host...
+              </div>
+            )}
+            
             <button
-              onClick={handleStartGame}
-              className="w-full py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors"
+              onClick={() => router.push('/')}
+              className="w-full btn-secondary"
             >
-              Start Game
+              Leave
             </button>
-          )}
-          {!isHost && (
-            <div className="text-gray-600">Waiting for host to start the game...</div>
-          )}
+          </div>
         </div>
       </div>
     );
@@ -265,16 +344,14 @@ export default function GamePage() {
         />
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 flex flex-col">
-          <div className="card flex-1 flex flex-col">
-            <div className="p-3 border-b border-card-border font-medium">
-              Drawing Board
-              {isCurrentPlayerDrawer() && (
-                <span className="ml-2 text-sm text-green-600">(You are drawing)</span>
-              )}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 grid-responsive">
+        {/* Drawing Board */}
+        <div className="lg:col-span-3 flex flex-col">
+          <div className="card flex-1 flex flex-col min-h-[400px]">
+            <div className="p-3 border-b border-card-border text-sm text-gray-600 dark:text-gray-400">
+              {isCurrentPlayerDrawer() ? "Your turn to draw" : "Guess what's being drawn"}
             </div>
-            <div className="flex-1 p-2 min-h-[300px]">
+            <div className="flex-1 p-2">
               <Canvas 
                 isDrawing={isCurrentPlayerDrawer()} 
                 onDrawingChange={handleDrawingChange}
@@ -283,7 +360,8 @@ export default function GamePage() {
             </div>
           </div>
           
-          <div className="mt-4 flex justify-center py-4 card">
+          {/* Word Hint */}
+          <div className="mt-4 card">
             <WordHint 
               word={gameState.currentWord || ""} 
               reveal={isCurrentPlayerDrawer()} 
@@ -291,6 +369,7 @@ export default function GamePage() {
           </div>
         </div>
         
+        {/* Sidebar */}
         <div className="flex flex-col gap-4">
           <PlayerList 
             players={gameState.players.map(p => ({

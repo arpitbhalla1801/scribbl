@@ -50,25 +50,22 @@ export default function JoinGamePage() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-black">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Join Game</h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Enter a game code to join your friends
-          </p>
+          <h1 className="text-3xl font-light mb-4 text-gray-900 dark:text-white">Join Game</h1>
         </div>
         
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 p-3 rounded-md text-sm">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-3 rounded-md text-sm">
                 {error}
               </div>
             )}
             
             <div>
-              <label htmlFor="gameCode" className="block text-sm font-medium mb-1">
+              <label htmlFor="gameCode" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 Game Code
               </label>
               <input
@@ -77,14 +74,14 @@ export default function JoinGamePage() {
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 required
-                className="w-full uppercase"
-                placeholder="Enter 6-character code"
+                className="w-full uppercase font-mono text-lg text-center"
+                placeholder="ABC123"
                 maxLength={6}
               />
             </div>
             
             <div>
-              <label htmlFor="playerName" className="block text-sm font-medium mb-1">
+              <label htmlFor="playerName" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 Your Name
               </label>
               <input
@@ -95,32 +92,33 @@ export default function JoinGamePage() {
                 required
                 className="w-full"
                 placeholder="Enter your name"
+                maxLength={20}
               />
             </div>
             
-            <div className="flex gap-4 pt-2">
+            <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                disabled={isLoading || !playerName.trim() || !gameCode.trim()}
+                disabled={isLoading || !playerName.trim() || !gameCode.trim() || gameCode.length !== 6}
                 className="btn-primary flex-1"
               >
-                {isLoading ? "Joining..." : "Join Game"}
+                {isLoading ? "Joining..." : "Join"}
               </button>
               <Link
                 href="/"
-                className="btn-secondary flex-1 text-center"
+                className="btn-secondary px-6"
               >
-                Cancel
+                Back
               </Link>
             </div>
           </form>
         </div>
         
         <div className="mt-6 text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Don't have a game code?{" "}
-            <Link href="/create" className="text-primary hover:underline">
-              Create a new game
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            Need a game?{" "}
+            <Link href="/create" className="text-gray-900 dark:text-white hover:underline">
+              Create one
             </Link>
           </p>
         </div>

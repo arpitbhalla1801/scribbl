@@ -49,19 +49,16 @@ export default function CreateGamePage() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-black">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Create Game</h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Set up your Scribbl game and invite friends to play
-          </p>
+          <h1 className="text-3xl font-light mb-4 text-gray-900 dark:text-white">Create Game</h1>
         </div>
         
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="playerName" className="block text-sm font-medium mb-1">
+              <label htmlFor="playerName" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 Your Name
               </label>
               <input
@@ -72,72 +69,59 @@ export default function CreateGamePage() {
                 required
                 className="w-full"
                 placeholder="Enter your name"
+                maxLength={20}
               />
             </div>
             
-            <div>
-              <label htmlFor="rounds" className="block text-sm font-medium mb-1">
-                Number of Rounds
-              </label>
-              <select
-                id="rounds"
-                value={rounds}
-                onChange={(e) => setRounds(Number(e.target.value))}
-                className="w-full"
-              >
-                <option value={2}>2 Rounds</option>
-                <option value={3}>3 Rounds</option>
-                <option value={4}>4 Rounds</option>
-                <option value={5}>5 Rounds</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="rounds" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Rounds
+                </label>
+                <select
+                  id="rounds"
+                  value={rounds}
+                  onChange={(e) => setRounds(Number(e.target.value))}
+                  className="w-full"
+                >
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="timePerRound" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Time (sec)
+                </label>
+                <select
+                  id="timePerRound"
+                  value={timePerRound}
+                  onChange={(e) => setTimePerRound(Number(e.target.value))}
+                  className="w-full"
+                >
+                  <option value={30}>30</option>
+                  <option value={60}>60</option>
+                  <option value={90}>90</option>
+                  <option value={120}>120</option>
+                </select>
+              </div>
             </div>
             
-            <div>
-              <label htmlFor="timePerRound" className="block text-sm font-medium mb-1">
-                Time per Round
-              </label>
-              <select
-                id="timePerRound"
-                value={timePerRound}
-                onChange={(e) => setTimePerRound(Number(e.target.value))}
-                className="w-full"
-              >
-                <option value={30}>30 Seconds</option>
-                <option value={60}>60 Seconds</option>
-                <option value={90}>90 Seconds</option>
-                <option value={120}>120 Seconds</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="difficulty" className="block text-sm font-medium mb-1">
-                Word Difficulty
-              </label>
-              <select
-                id="difficulty"
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full"
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            
-            <div className="flex gap-4 pt-2">
+            <div className="flex gap-3 pt-4">
               <button
                 type="submit"
                 disabled={isLoading || !playerName.trim()}
                 className="btn-primary flex-1"
               >
-                {isLoading ? "Creating..." : "Start Game"}
+                {isLoading ? "Creating..." : "Start"}
               </button>
               <Link
                 href="/"
-                className="btn-secondary flex-1 text-center"
+                className="btn-secondary px-6"
               >
-                Cancel
+                Back
               </Link>
             </div>
           </form>
