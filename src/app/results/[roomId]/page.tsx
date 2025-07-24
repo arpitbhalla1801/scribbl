@@ -15,8 +15,8 @@ export default function ResultsPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = params.roomId as string;
-  const playerName = searchParams.get("name") || "Guest";
+  const roomId = params?.roomId as string;
+  const playerName = searchParams?.get("name") || "Guest";
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);

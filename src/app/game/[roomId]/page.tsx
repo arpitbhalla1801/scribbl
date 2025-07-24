@@ -14,9 +14,9 @@ export default function GamePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = params.roomId as string;
-  const playerName = searchParams.get("name") || "Guest";
-  const playerId = searchParams.get("playerId") || "";
+  const roomId = (params?.roomId ?? "") as string;
+  const playerName = searchParams?.get("name") || "Guest";
+  const playerId = searchParams?.get("playerId") || "";
 
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
