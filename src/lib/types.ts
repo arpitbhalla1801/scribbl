@@ -20,6 +20,13 @@ export interface DrawingStroke {
   timestamp: number;
 }
 
+// Tldraw snapshot data
+export interface TldrawSnapshot {
+  snapshot: any; // TLStoreSnapshot from tldraw
+  lastUpdatedBy: string;
+  timestamp: number;
+}
+
 export interface GameState {
   roomId: string;
   status: 'waiting' | 'playing' | 'finished';
@@ -31,7 +38,8 @@ export interface GameState {
   currentWord?: string;
   currentDrawer?: string;
   timeRemaining: number;
-  drawing: DrawingStroke[];
+  drawing: DrawingStroke[]; // Legacy drawing system (kept for compatibility)
+  tldrawSnapshot?: TldrawSnapshot; // New tldraw-based drawing system
   guesses: Array<{
     playerId: string;
     playerName: string;
@@ -62,8 +70,9 @@ export interface GuessRequest {
 
 export interface DrawingUpdate {
   playerId: string;
-  type: 'stroke' | 'clear';
+  type: 'stroke' | 'clear' | 'tldraw_snapshot';
   stroke?: DrawingStroke;
+  tldrawSnapshot?: any; // TLStoreSnapshot from tldraw
 }
 
 export interface ChatMessage {

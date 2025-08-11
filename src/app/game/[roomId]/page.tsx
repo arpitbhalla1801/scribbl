@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { GameState, ChatMessage, DrawingUpdate } from "@/lib/types";
 import { useRealtimeGame } from "@/lib/useRealtimeGame";
-import Canvas from "@/components/Canvas";
+import TldrawCanvas from "@/components/TldrawCanvas";
 import ChatBox from "@/components/ChatBox";
 import PlayerList from "@/components/PlayerList";
 import WordHint from "@/components/WordHint";
@@ -110,14 +110,6 @@ export default function GamePage() {
     } else {
       // For regular chat, use sendChatMessage
       sendChatMessage(message);
-    }
-  };
-
-  const handleDrawingChange = (imageData: string, update: DrawingUpdate) => {
-    // Only send drawing updates if the current player is the drawer
-    if (isCurrentPlayerDrawer()) {
-      const updateWithPlayerId = { ...update, playerId };
-      sendDrawingUpdate(updateWithPlayerId);
     }
   };
 
@@ -352,10 +344,11 @@ export default function GamePage() {
               {isCurrentPlayerDrawer() ? "Your turn to draw" : "Guess what's being drawn"}
             </div>
             <div className="flex-1 p-2">
-              <Canvas 
+              <TldrawCanvas 
                 isDrawing={isCurrentPlayerDrawer()} 
-                onDrawingChange={handleDrawingChange}
                 gameState={gameState}
+                roomId={roomId}
+                playerId={playerId}
               />
             </div>
           </div>

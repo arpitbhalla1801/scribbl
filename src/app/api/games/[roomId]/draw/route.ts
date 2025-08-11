@@ -9,25 +9,24 @@ export async function POST(
   try {
     const { roomId } = await params;
     const body: DrawingUpdate = await request.json();
-    const { playerId, strokes } = body;
 
     // Validate input
-    if (!playerId) {
+    if (!body.playerId) {
       return NextResponse.json(
         { error: 'Player ID is required' },
         { status: 400 }
       );
     }
 
-    if (!Array.isArray(strokes)) {
+    if (!['stroke', 'clear', 'tldraw_snapshot'].includes(body.type)) {
       return NextResponse.json(
-        { error: 'Strokes must be an array' },
+        { error: 'Invalid update type' },
         { status: 400 }
       );
     }
 
     // Update the drawing
-    const result = GameManager.updateDrawing(roomId, playerId, strokes);
+    const result = GameManager.updateDrawing(roomId, body);
 
     if (!result.success) {
       return NextResponse.json(

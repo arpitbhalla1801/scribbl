@@ -103,6 +103,7 @@ export class GameManager {
   static startTurn(game: GameState): void {
     // Reset turn state
     game.drawing = [];
+    game.tldrawSnapshot = undefined; // Clear tldraw snapshot for new turn
     game.guesses = [];
     game.roundScores = {};
     game.timeRemaining = game.settings.timePerRound;
@@ -132,11 +133,25 @@ export class GameManager {
       return { success: false, error: 'Game not in progress' };
     }
 
-    // Add the drawing stroke to the game state
+    // Only allow the current drawer to update the drawing
+    if (game.currentDrawer !== update.playerId) {
+      return { success: false, error: 'Only the current drawer can update the drawing' };
+    }
+
+    // Handle different types of drawing updates
     if (update.type === 'stroke' && update.stroke) {
       game.drawing.push(update.stroke);
     } else if (update.type === 'clear') {
       game.drawing = [];
+      // Also clear tldraw snapshot
+      game.tldrawSnapshot = undefined;
+    } else if (update.type === 'tldraw_snapshot' && update.tldrawSnapshot) {
+      // Update tldraw snapshot
+      game.tldrawSnapshot = {
+        snapshot: update.tldrawSnapshot,
+        lastUpdatedBy: update.playerId,
+        timestamp: Date.now()
+      };
     }
 
     game.lastActivity = Date.now();
