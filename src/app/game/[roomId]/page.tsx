@@ -113,8 +113,18 @@ export default function GamePage() {
     }
   };
 
-  const handleTimeEnd = () => {
-    handleRoundTimeout();
+  // Store the previous word to reveal after timeout
+  const prevWordRef = useRef<string | undefined>(undefined);
+
+  const handleTimeEnd = async () => {
+    // Save the word before timeout (it will be replaced after handleRoundTimeout)
+    prevWordRef.current = gameState?.currentWord;
+    await handleRoundTimeout();
+    // After timeout and state update, show the word that just ended
+    if (prevWordRef.current) {
+      addSystemMessage(`Time is up! The word was "${prevWordRef.current}"`);
+      prevWordRef.current = undefined;
+    }
   };
 
   const handleStartGame = () => {
