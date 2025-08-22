@@ -66,6 +66,7 @@ export interface JoinGameRequest {
 export interface GuessRequest {
   playerId: string;
   guess: string;
+  timeLeft?: number; // seconds left on client timer
 }
 
 export interface DrawingUpdate {

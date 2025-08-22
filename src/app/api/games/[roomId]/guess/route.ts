@@ -9,7 +9,7 @@ export async function POST(
   try {
     const { roomId } = await params;
     const body: GuessRequest = await request.json();
-    const { playerId, guess } = body;
+  const { playerId, guess, timeLeft } = body;
 
     // Validate input
     if (!playerId) {
@@ -27,7 +27,7 @@ export async function POST(
     }
 
     // Submit the guess
-    const result = GameManager.submitGuess(roomId, playerId, guess.trim());
+  const result = GameManager.submitGuess(roomId, playerId, guess.trim(), timeLeft);
 
     if (!result.success) {
       return NextResponse.json(

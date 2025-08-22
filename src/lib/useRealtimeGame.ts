@@ -100,13 +100,13 @@ export function useRealtimeGame({
     }
   };
 
-  const submitGuess = async (guess: string) => {
+  // Accepts optional timeLeft for time-based scoring
+  const submitGuess = async (guess: string, timeLeft?: number) => {
     try {
-      const result = await GameAPI.submitGuess(roomId, playerId, guess);
+      const result = await GameAPI.submitGuess(roomId, playerId, guess, timeLeft);
       if (result.success && result.gameState) {
         setGameState(result.gameState);
         onGameStateUpdate?.(result.gameState);
-        
         // Add the guess as a message immediately
         const message: ChatMessage = {
           id: `guess-${playerId}-${Date.now()}`,
@@ -116,7 +116,6 @@ export function useRealtimeGame({
           timestamp: Date.now(),
           isCorrect: result.isCorrect,
         };
-        
         setMessages(prev => [...prev, message]);
         onNewMessage?.(message);
       }

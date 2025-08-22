@@ -11,16 +11,18 @@ interface Message {
 
 interface ChatBoxProps {
   username: string;
-  onMessageSend: (message: string) => void;
+  onMessageSend: (message: string, timeLeft?: number) => void;
   messages: Message[];
   isGuessing: boolean;
+  timeLeft?: number;
 }
 
 const ChatBox: React.FC<ChatBoxProps> = ({
   username,
   onMessageSend,
   messages,
-  isGuessing
+  isGuessing,
+  timeLeft
 }) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -36,8 +38,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() === "") return;
-    
-    onMessageSend(message);
+    onMessageSend(message, timeLeft);
     setMessage("");
   };
   

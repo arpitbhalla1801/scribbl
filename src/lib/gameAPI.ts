@@ -93,7 +93,7 @@ export class GameAPI {
     }
   }
 
-  static async submitGuess(roomId: string, playerId: string, guess: string): Promise<{
+  static async submitGuess(roomId: string, playerId: string, guess: string, timeLeft?: number): Promise<{
     success: boolean;
     isCorrect?: boolean;
     gameState?: GameState;
@@ -105,7 +105,7 @@ export class GameAPI {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ playerId, guess }),
+        body: JSON.stringify({ playerId, guess, timeLeft }),
       });
 
       const data = await response.json();

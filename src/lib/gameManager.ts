@@ -159,7 +159,7 @@ export class GameManager {
     return { success: true, gameState: game };
   }
 
-  static submitGuess(roomId: string, playerId: string, guess: string): { 
+  static submitGuess(roomId: string, playerId: string, guess: string, timeLeft?: number): { 
     success: boolean; 
     isCorrect?: boolean; 
     gameState?: GameState; 
@@ -202,23 +202,28 @@ export class GameManager {
 
     // Award points if correct
     if (isCorrect) {
-      const timeBonus = Math.max(0, game.timeRemaining);
-      const points = Math.floor(100 + (timeBonus * 2));
-      
+      // Use timeLeft from client if provided, else fallback to server's timeRemaining
+      const timeBonus = typeof timeLeft === 'number' ? Math.max(0, timeLeft) : Math.max(0, game.timeRemaining);
+      // Points: base 100 + up to 100 bonus for speed (linear)
+      const maxBonus = 100;
+      const totalTime = game.settings.timePerRound;
+      const bonus = Math.round((timeBonus / totalTime) * maxBonus);
+      const points = 100 + bonus;
+
       player.score += points;
-      
+
       // Add to round scores
       if (!game.roundScores[playerId]) {
         game.roundScores[playerId] = 0;
       }
       game.roundScores[playerId] += points;
 
-      // Award points to drawer too
+      // Award points to drawer too (half of guesser's points)
       const drawer = game.players.find(p => p.id === game.currentDrawer);
       if (drawer) {
         const drawerPoints = Math.floor(points * 0.5);
         drawer.score += drawerPoints;
-        
+
         if (!game.roundScores[drawer.id]) {
           game.roundScores[drawer.id] = 0;
         }
@@ -228,7 +233,7 @@ export class GameManager {
       // Check if all players have guessed correctly
       const eligiblePlayers = game.players.filter(p => p.id !== game.currentDrawer && p.isOnline);
       const correctGuesses = game.guesses.filter(g => g.isCorrect);
-      
+
       if (correctGuesses.length >= eligiblePlayers.length) {
         // End turn early - everyone guessed correctly
         this.endTurn(game);

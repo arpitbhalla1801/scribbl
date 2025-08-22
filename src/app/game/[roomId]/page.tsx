@@ -103,12 +103,11 @@ export default function GamePage() {
     setMessages(prev => [...prev, systemMessage]);
   };
 
-  const handleSendMessage = (message: string) => {
-    // For guesses, use the submitGuess function
+  // Accepts optional timeLeft for time-based scoring
+  const handleSendMessage = (message: string, timeLeft?: number) => {
     if (gameState?.status === 'playing' && !isCurrentPlayerDrawer()) {
-      submitGuess(message);
+      submitGuess(message, timeLeft);
     } else {
-      // For regular chat, use sendChatMessage
       sendChatMessage(message);
     }
   };
@@ -340,6 +339,7 @@ export default function GamePage() {
           roundNumber={gameState.currentRound}
           totalRounds={gameState.settings.rounds}
           timeRemaining={gameState.timeRemaining}
+          totalTime={gameState.settings.timePerRound}
           onTimeEnd={handleTimeEnd}
           currentTurn={gameState.currentTurn}
           totalTurns={gameState.totalTurns}
@@ -395,6 +395,7 @@ export default function GamePage() {
                 isCorrect: m.isCorrect,
               }))}
               isGuessing={!isCurrentPlayerDrawer() && gameState.status === 'playing'}
+              timeLeft={gameState.timeRemaining}
             />
           </div>
         </div>

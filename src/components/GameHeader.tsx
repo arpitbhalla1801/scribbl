@@ -8,6 +8,7 @@ interface GameHeaderProps {
   roundNumber: number;
   totalRounds: number;
   timeRemaining: number;
+  totalTime: number;
   onTimeEnd?: () => void;
   currentTurn?: number;
   totalTurns?: number;
@@ -18,6 +19,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   roundNumber,
   totalRounds,
   timeRemaining,
+  totalTime,
   onTimeEnd,
   currentTurn,
   totalTurns
@@ -53,6 +55,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         <div className="w-full sm:w-48">
           <Timer 
             timeRemaining={timeRemaining}
+            totalTime={totalTime}
             onTimeEnd={onTimeEnd}
           />
         </div>
