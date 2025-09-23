@@ -76,8 +76,8 @@ export function useRealtimeGame({
       // Initial fetch
       pollGameState();
       
-      // Set up polling interval
-      intervalRef.current = setInterval(pollGameState, 1000); // Poll every second
+      // Set up polling interval - reduced for better timer sync
+      intervalRef.current = setInterval(pollGameState, 500); // Poll every 500ms
       
       return () => {
         if (intervalRef.current) {

@@ -4,6 +4,9 @@ import { getRandomWords } from './words';
 // In-memory storage for games (in production, you'd use a database)
 const games: Map<string, GameState> = new Map();
 
+// Server-side timers for each game
+const gameTimers: Map<string, NodeJS.Timeout> = new Map();
+
 export class GameManager {
   static createGame(roomId: string, hostName: string, settings: GameSettings): GameState {
     const host: Player = {
@@ -36,7 +39,12 @@ export class GameManager {
   }
 
   static getGame(roomId: string): GameState | null {
-    return games.get(roomId) || null;
+    const game = games.get(roomId) || null;
+    if (game) {
+      // Update time remaining based on elapsed time for more accurate sync
+      this.updateTimeRemaining(game);
+    }
+    return game;
   }
 
   static joinGame(roomId: string, playerName: string): { success: boolean; player?: Player; error?: string } {
@@ -107,6 +115,13 @@ export class GameManager {
     game.guesses = [];
     game.roundScores = {};
     game.timeRemaining = game.settings.timePerRound;
+    game.turnStartTime = Date.now(); // Track when turn started
+
+    // Clear any existing timer for this game
+    this.clearGameTimer(game.roomId);
+
+    // Start server-side timer
+    this.startGameTimer(game);
 
     // Calculate which player should draw based on current turn
     const onlinePlayers = game.players.filter(p => p.isOnline);
@@ -304,6 +319,9 @@ export class GameManager {
   }
 
   static endTurn(game: GameState): void {
+    // Clear the timer for the current turn
+    this.clearGameTimer(game.roomId);
+    
     // Check if all turns are completed
     if (game.currentTurn >= game.totalTurns) {
       // Game is finished
@@ -337,7 +355,8 @@ export class GameManager {
       return { success: false, error: 'Game not in progress' };
     }
 
-    // Set time to 0 to indicate turn is over
+    // Clear the timer and end turn
+    this.clearGameTimer(roomId);
     game.timeRemaining = 0;
     game.lastActivity = Date.now();
 
@@ -352,6 +371,9 @@ export class GameManager {
     if (!game) {
       return { success: false, error: 'Game not found' };
     }
+
+    // Update time remaining based on elapsed time for more accurate sync
+    this.updateTimeRemaining(game);
 
     return { success: true, gameState: game };
   }
@@ -385,6 +407,44 @@ export class GameManager {
     return Math.random().toString(36).substring(2, 15);
   }
 
+  // Timer management methods
+  static startGameTimer(game: GameState): void {
+    const timer = setInterval(() => {
+      if (game.status !== 'playing') {
+        this.clearGameTimer(game.roomId);
+        return;
+      }
+
+      game.timeRemaining = Math.max(0, game.timeRemaining - 1);
+      game.lastActivity = Date.now();
+
+      // Auto-timeout when time reaches 0
+      if (game.timeRemaining <= 0) {
+        this.clearGameTimer(game.roomId);
+        this.endTurn(game);
+      }
+    }, 1000);
+
+    gameTimers.set(game.roomId, timer);
+  }
+
+  static clearGameTimer(roomId: string): void {
+    const timer = gameTimers.get(roomId);
+    if (timer) {
+      clearInterval(timer);
+      gameTimers.delete(roomId);
+    }
+  }
+
+  static updateTimeRemaining(game: GameState): void {
+    if (!game.turnStartTime || game.status !== 'playing') {
+      return;
+    }
+    
+    const elapsed = Math.floor((Date.now() - game.turnStartTime) / 1000);
+    game.timeRemaining = Math.max(0, game.settings.timePerRound - elapsed);
+  }
+
   // Cleanup inactive games (call this periodically)
   static cleanupInactiveGames(): void {
     const now = Date.now();
@@ -392,6 +452,8 @@ export class GameManager {
 
     for (const [roomId, game] of games.entries()) {
       if (now - game.lastActivity > INACTIVE_THRESHOLD) {
+        // Clear timer before deleting game
+        this.clearGameTimer(roomId);
         games.delete(roomId);
       }
     }

@@ -38,6 +38,7 @@ export interface GameState {
   currentWord?: string;
   currentDrawer?: string;
   timeRemaining: number;
+  turnStartTime?: number; // Server timestamp when current turn started
   drawing: DrawingStroke[]; // Legacy drawing system (kept for compatibility)
   tldrawSnapshot?: TldrawSnapshot; // New tldraw-based drawing system
   guesses: Array<{
