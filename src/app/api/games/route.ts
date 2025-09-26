@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!settings || !settings.rounds || !settings.timePerRound || !settings.difficulty) {
+    if (!settings || typeof settings.rounds !== 'number' || typeof settings.timePerRound !== 'number') {
       return NextResponse.json(
         { error: 'Game settings are required' },
         { status: 400 }
@@ -37,18 +37,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!['easy', 'medium', 'hard'].includes(settings.difficulty)) {
-      return NextResponse.json(
-        { error: 'Invalid difficulty level' },
-        { status: 400 }
-      );
-    }
+    // Provide default difficulty if not specified
+    const gameSettings = {
+      ...settings,
+      difficulty: settings.difficulty || 'medium'
+    };
 
     // Generate unique room ID
     const roomId = GameManager.generateRoomId();
 
     // Create the game
-    const gameState = GameManager.createGame(roomId, playerName.trim(), settings);
+    const gameState = GameManager.createGame(roomId, playerName.trim(), gameSettings);
 
     return NextResponse.json({
       success: true,

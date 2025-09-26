@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor, TLRecord, TLStoreSnapshot } from 'tldraw';
+import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor } from 'tldraw';
 import { GameState } from '@/lib/types';
 import { TldrawSyncService } from '@/lib/tldrawSyncService';
 
@@ -10,12 +10,11 @@ interface TldrawCanvasProps {
   gameState?: GameState;
   roomId: string;
   playerId: string;
-  onDrawingChange?: (snapshot: TLStoreSnapshot) => void;
 }
 
 // Custom UI components - hide all page and extra UI, only show drawing tools
 const components: TLComponents = {
-  Toolbar: (props: any) => <div style={{ display: 'block' }}>{props.children}</div>,
+  Toolbar: (props: React.ComponentProps<'div'>) => <div style={{ display: 'block' }}>{props.children}</div>,
   StylePanel: null,
   ActionsMenu: null,
   HelpMenu: null,
@@ -43,13 +42,11 @@ const uiOverrides: TLUiOverrides = {
 const DrawingTracker = track(({ 
   syncService, 
   isDrawing, 
-  roomId,
   gameState,
   onEditorReady 
 }: { 
   syncService: TldrawSyncService;
   isDrawing: boolean;
-  roomId: string;
   gameState?: GameState;
   onEditorReady?: (editor: Editor) => void;
 }) => {
@@ -81,7 +78,7 @@ const DrawingTracker = track(({
     if (!isDrawing && gameState) {
       syncService.applySnapshot(gameState);
     }
-  }, [gameState?.tldrawSnapshot, isDrawing, syncService]);
+  }, [gameState, isDrawing, syncService]);
 
   // Clear canvas when starting a new turn (no tldraw snapshot)
   useEffect(() => {
@@ -102,7 +99,6 @@ export const TldrawCanvas: React.FC<TldrawCanvasProps> = ({
   gameState,
   roomId,
   playerId,
-  onDrawingChange,
 }) => {
   const editorRef = useRef<Editor | null>(null);
   const syncServiceRef = useRef<TldrawSyncService | null>(null);
@@ -171,7 +167,6 @@ export const TldrawCanvas: React.FC<TldrawCanvasProps> = ({
         <DrawingTracker 
           syncService={syncServiceRef.current}
           isDrawing={isDrawing}
-          roomId={roomId}
           gameState={gameState}
         />
       </Tldraw>

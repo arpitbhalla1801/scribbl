@@ -1,4 +1,4 @@
-import { GameState, CreateGameRequest, JoinGameRequest, GuessRequest, DrawingUpdate } from './types';
+import { GameState, CreateGameRequest, DrawingUpdate } from './types';
 
 export class GameAPI {
   static async createGame(request: CreateGameRequest): Promise<{
@@ -19,7 +19,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -44,7 +44,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -61,7 +61,7 @@ export class GameAPI {
       const response = await fetch(`/api/games/${roomId}`);
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -85,7 +85,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -110,7 +110,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -134,7 +134,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -153,7 +153,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',
@@ -173,7 +173,7 @@ export class GameAPI {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Network error',

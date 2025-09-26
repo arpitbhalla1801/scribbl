@@ -72,7 +72,7 @@ const Canvas: React.FC<CanvasProps> = ({ isDrawing, onDrawingChange, gameState }
       }
       ctx.stroke();
     });
-  }, [ctx, gameState?.drawing]);
+  }, [ctx, gameState]);
   
   const clearCanvas = () => {
     if (!ctx || !canvasRef.current || !isDrawing) return;

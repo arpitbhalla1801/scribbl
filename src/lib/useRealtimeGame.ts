@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameState, ChatMessage, DrawingUpdate } from './types';
 import { GameAPI } from './gameAPI';
 
@@ -26,7 +26,7 @@ export function useRealtimeGame({
   const lastUpdateRef = useRef<number>(0);
 
   // Polling function to get game updates
-  const pollGameState = async () => {
+  const pollGameState = useCallback(async () => {
     try {
       const result = await GameAPI.getGame(roomId);
       if (result.success && result.gameState) {
@@ -68,7 +68,7 @@ export function useRealtimeGame({
       console.error('Error polling game state:', error);
       onError?.('Connection error');
     }
-  };
+  }, [roomId, isConnected, onGameStateUpdate, onError]);
 
   // Start polling when component mounts
   useEffect(() => {
@@ -85,7 +85,7 @@ export function useRealtimeGame({
         }
       };
     }
-  }, [roomId, playerId]);
+  }, [roomId, playerId, pollGameState]);
 
   // Actions
   const sendDrawingUpdate = async (update: DrawingUpdate) => {

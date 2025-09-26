@@ -1,4 +1,4 @@
-import { GameState, Player, GameSettings, DrawingStroke, DrawingUpdate } from './types';
+import { GameState, Player, GameSettings, DrawingUpdate } from './types';
 import { getRandomWords } from './words';
 
 // In-memory storage for games (in production, you'd use a database)
@@ -132,7 +132,7 @@ export class GameManager {
     }
 
     // Choose random word based on difficulty
-    const words = getRandomWords(game.settings.difficulty, 3);
+    const words = getRandomWords(game.settings.difficulty || 'medium', 3);
     game.currentWord = words[0]; // In a real game, drawer would choose from 3 options
 
     game.lastActivity = Date.now();

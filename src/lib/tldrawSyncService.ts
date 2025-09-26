@@ -1,6 +1,6 @@
 "use client";
 
-import { TLStoreSnapshot, Editor } from 'tldraw';
+import { Editor } from 'tldraw';
 import { GameState } from './types';
 
 export class TldrawSyncService {

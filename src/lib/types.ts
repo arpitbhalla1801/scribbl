@@ -1,3 +1,5 @@
+import { TLStoreSnapshot } from 'tldraw';
+
 export interface Player {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ export interface Player {
 export interface GameSettings {
   rounds: number;
   timePerRound: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface DrawingStroke {
@@ -22,7 +24,7 @@ export interface DrawingStroke {
 
 // Tldraw snapshot data
 export interface TldrawSnapshot {
-  snapshot: any; // TLStoreSnapshot from tldraw
+  snapshot: TLStoreSnapshot; // TLStoreSnapshot from tldraw
   lastUpdatedBy: string;
   timestamp: number;
 }
@@ -74,7 +76,7 @@ export interface DrawingUpdate {
   playerId: string;
   type: 'stroke' | 'clear' | 'tldraw_snapshot';
   stroke?: DrawingStroke;
-  tldrawSnapshot?: any; // TLStoreSnapshot from tldraw
+  tldrawSnapshot?: TLStoreSnapshot; // TLStoreSnapshot from tldraw
 }
 
 export interface ChatMessage {

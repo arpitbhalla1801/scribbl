@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { GameState, ChatMessage, DrawingUpdate } from "@/lib/types";
+import { GameState, ChatMessage } from "@/lib/types";
 import { useRealtimeGame } from "@/lib/useRealtimeGame";
 import TldrawCanvas from "@/components/TldrawCanvas";
 import ChatBox from "@/components/ChatBox";
@@ -28,12 +28,10 @@ export default function GamePage() {
     isConnected,
     gameState: realtimeGameState,
     messages: realtimeMessages,
-    sendDrawingUpdate,
     submitGuess,
     startGame,
     sendChatMessage,
     handleRoundTimeout,
-    leaveRoom,
   } = useRealtimeGame({
     roomId,
     playerId,
@@ -283,7 +281,7 @@ export default function GamePage() {
             </div>
             
             <div className="space-y-2">
-              {gameState.players.map((player, index) => (
+              {gameState.players.map((player) => (
                 <div 
                   key={player.id} 
                   className={`flex items-center justify-between p-3 rounded-md ${

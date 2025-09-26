@@ -13,7 +13,7 @@ const WordHint: React.FC<WordHintProps> = ({ word, reveal = false }) => {
           Your word to draw:
         </div>
         <div className="font-bold text-xl text-gray-900 dark:text-gray-100">
-          "{word}"
+          &ldquo;{word}&rdquo;
         </div>
       </div>
     );

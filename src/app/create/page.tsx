@@ -9,7 +9,6 @@ export default function CreateGamePage() {
   const [playerName, setPlayerName] = useState("");
   const [rounds, setRounds] = useState(3);
   const [timePerRound, setTimePerRound] = useState(60);
-  const [difficulty, setDifficulty] = useState("medium");
   const [isLoading, setIsLoading] = useState(false);
   
   const handleSubmit = async (e: FormEvent) => {
@@ -27,7 +26,6 @@ export default function CreateGamePage() {
           settings: {
             rounds,
             timePerRound,
-            difficulty,
           },
         }),
       });
