@@ -15,6 +15,7 @@ interface ChatBoxProps {
   messages: Message[];
   isGuessing: boolean;
   timeLeft?: number;
+  hasGuessedCorrectly?: boolean;
 }
 
 const ChatBox: React.FC<ChatBoxProps> = ({
@@ -22,7 +23,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   onMessageSend,
   messages,
   isGuessing,
-  timeLeft
+  timeLeft,
+  hasGuessedCorrectly = false
 }) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -93,9 +95,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             disabled={!isGuessing}
             placeholder={
-              isGuessing 
-                ? "Type your guess..." 
-                : "Waiting for your turn..."
+              hasGuessedCorrectly
+                ? "You guessed correctly! ✓"
+                : isGuessing 
+                  ? "Type your guess..." 
+                  : "Waiting for your turn..."
             }
             className="flex-1 px-3 py-2 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent disabled:opacity-50"
           />

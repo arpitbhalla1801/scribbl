@@ -58,7 +58,21 @@ export default function GamePage() {
 
   useEffect(() => {
     if (realtimeMessages) {
-      setMessages(realtimeMessages);
+      setMessages(prevMessages => {
+        // Find welcome message in previous messages
+        const welcomeMsg = prevMessages.find(m => m.id.startsWith('system-welcome-'));
+        
+        // If we have a welcome message, prepend it to realtime messages
+        if (welcomeMsg) {
+          // Check if it's not already in realtime messages
+          const hasWelcome = realtimeMessages.some(m => m.id === welcomeMsg.id);
+          if (!hasWelcome) {
+            return [welcomeMsg, ...realtimeMessages].sort((a, b) => a.timestamp - b.timestamp);
+          }
+        }
+        
+        return realtimeMessages;
+      });
     }
   }, [realtimeMessages]);
 
@@ -72,13 +86,18 @@ export default function GamePage() {
     // Add welcome message once when connected
     if (gameState && welcomeMessageSent.current !== roomId) {
       const welcomeMessage: ChatMessage = {
-        id: `system-welcome-${Date.now()}`,
+        id: `system-welcome-${roomId}`,
         playerId: 'system',
         playerName: 'System',
         message: `Welcome to room ${roomId}!`,
         timestamp: Date.now(),
       };
-      setMessages(prev => [...prev, welcomeMessage]);
+      setMessages(prev => {
+        // Check if welcome message already exists
+        const exists = prev.some(m => m.id === `system-welcome-${roomId}`);
+        if (exists) return prev;
+        return [...prev, welcomeMessage];
+      });
       welcomeMessageSent.current = roomId;
     }
   }, [gameState, roomId]);
@@ -130,6 +149,10 @@ export default function GamePage() {
 
   const isCurrentPlayerDrawer = (): boolean => {
     return gameState?.currentDrawer === playerId;
+  };
+
+  const hasPlayerGuessedCorrectly = (): boolean => {
+    return gameState?.guesses.some(g => g.playerId === playerId && g.isCorrect) || false;
   };
 
   const currentPlayer = gameState?.players.find(p => p.id === playerId);
@@ -392,8 +415,9 @@ export default function GamePage() {
                 text: m.message,
                 isCorrect: m.isCorrect,
               }))}
-              isGuessing={!isCurrentPlayerDrawer() && gameState.status === 'playing'}
+              isGuessing={!isCurrentPlayerDrawer() && !hasPlayerGuessedCorrectly() && gameState.status === 'playing'}
               timeLeft={gameState.timeRemaining}
+              hasGuessedCorrectly={hasPlayerGuessedCorrectly()}
             />
           </div>
         </div>
