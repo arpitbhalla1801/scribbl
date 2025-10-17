@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor, StyleProp, DefaultColorStyle, DefaultSizeStyle } from 'tldraw';
+import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor, DefaultColorStyle, DefaultSizeStyle } from 'tldraw';
 import { GameState } from '@/lib/types';
 import { TldrawSyncService } from '@/lib/tldrawSyncService';
 
