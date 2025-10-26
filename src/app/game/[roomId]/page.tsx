@@ -4,11 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { GameState, ChatMessage } from "@/lib/types";
 import { useRealtimeGame } from "@/lib/useRealtimeGame";
+import { GameAPI } from "@/lib/gameAPI";
 import TldrawCanvas from "@/components/TldrawCanvas";
 import ChatBox from "@/components/ChatBox";
 import PlayerList from "@/components/PlayerList";
 import WordHint from "@/components/WordHint";
 import GameHeader from "@/components/GameHeader";
+import WordSelectionModal from "@/components/WordSelectionModal";
 
 export default function GamePage() {
   const params = useParams();
@@ -18,15 +20,13 @@ export default function GamePage() {
   const playerName = searchParams?.get("name") || "Guest";
   const playerId = searchParams?.get("playerId") || "";
 
-  const [gameState, setGameState] = useState<GameState | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const welcomeMessageSent = useRef<string | null>(null);
 
-  // Real-time game connection using polling
+  // Real-time game connection using optimized HTTP polling
   const {
     isConnected,
-    gameState: realtimeGameState,
+    gameState,
     messages: realtimeMessages,
     submitGuess,
     startGame,
@@ -37,50 +37,15 @@ export default function GamePage() {
     playerId,
     playerName,
     onGameStateUpdate: (newGameState) => {
-      setGameState(newGameState);
-      setConnectionStatus('connected');
+      // State is already updated by the hook
     },
     onNewMessage: (message) => {
       setMessages(prev => [...prev, message]);
     },
     onError: (error) => {
       console.error('Game error:', error);
-      setConnectionStatus('error');
     },
   });
-
-  // Update local state when realtime state changes
-  useEffect(() => {
-    if (realtimeGameState) {
-      setGameState(realtimeGameState);
-    }
-  }, [realtimeGameState]);
-
-  useEffect(() => {
-    if (realtimeMessages) {
-      setMessages(prevMessages => {
-        // Find welcome message in previous messages
-        const welcomeMsg = prevMessages.find(m => m.id.startsWith('system-welcome-'));
-        
-        // If we have a welcome message, prepend it to realtime messages
-        if (welcomeMsg) {
-          // Check if it's not already in realtime messages
-          const hasWelcome = realtimeMessages.some(m => m.id === welcomeMsg.id);
-          if (!hasWelcome) {
-            return [welcomeMsg, ...realtimeMessages].sort((a, b) => a.timestamp - b.timestamp);
-          }
-        }
-        
-        return realtimeMessages;
-      });
-    }
-  }, [realtimeMessages]);
-
-  useEffect(() => {
-    if (isConnected && connectionStatus === 'connecting') {
-      setConnectionStatus('connected');
-    }
-  }, [isConnected, connectionStatus]);
 
   useEffect(() => {
     // Add welcome message once when connected
@@ -102,6 +67,28 @@ export default function GamePage() {
     }
   }, [gameState, roomId]);
 
+  // Sync messages from game state
+  useEffect(() => {
+    if (gameState?.guesses) {
+      const guessMessages: ChatMessage[] = gameState.guesses.map((guess, idx) => ({
+        id: `guess-${idx}-${guess.playerId}`,
+        playerId: guess.playerId,
+        playerName: guess.playerName,
+        message: guess.guess,
+        timestamp: guess.timestamp,
+        isCorrect: guess.isCorrect,
+      }));
+      setMessages(prev => {
+        // Keep welcome message and add guess messages
+        const welcome = prev.filter(m => m.id.startsWith('system-'));
+        const uniqueGuesses = guessMessages.filter(
+          g => !prev.some(p => p.id === g.id)
+        );
+        return [...welcome, ...guessMessages];
+      });
+    }
+  }, [gameState?.guesses]);
+
   // Redirect if no playerId (should come from join/create flow)
   useEffect(() => {
     if (!playerId) {
@@ -120,10 +107,9 @@ export default function GamePage() {
     setMessages(prev => [...prev, systemMessage]);
   };
 
-  // Accepts optional timeLeft for time-based scoring
-  const handleSendMessage = (message: string, timeLeft?: number) => {
+  const handleSendMessage = (message: string) => {
     if (gameState?.status === 'playing' && !isCurrentPlayerDrawer()) {
-      submitGuess(message, timeLeft);
+      submitGuess(message);
     } else {
       sendChatMessage(message);
     }
@@ -151,6 +137,16 @@ export default function GamePage() {
     return gameState?.currentDrawer === playerId;
   };
 
+  const handleWordSelect = async (wordIndex: number) => {
+    if (!isCurrentPlayerDrawer()) return;
+    
+    try {
+      await GameAPI.selectWord(roomId, playerId, wordIndex);
+    } catch (error) {
+      console.error('Error selecting word:', error);
+    }
+  };
+
   const hasPlayerGuessedCorrectly = (): boolean => {
     return gameState?.guesses.some(g => g.playerId === playerId && g.isCorrect) || false;
   };
@@ -158,36 +154,13 @@ export default function GamePage() {
   const currentPlayer = gameState?.players.find(p => p.id === playerId);
   const isHost = currentPlayer?.isHost || false;
 
-  if (connectionStatus === 'connecting') {
+  // Show loading while connecting
+  if (!isConnected && !gameState) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-2 border-gray-300 dark:border-gray-700 rounded-full border-t-black dark:border-t-white mx-auto mb-4"></div>
           <div className="text-gray-600 dark:text-gray-400">Connecting...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (connectionStatus === 'error') {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center card p-6 max-w-sm mx-4">
-          <div className="text-red-500 dark:text-red-400 mb-4">Connection failed</div>
-          <div className="space-y-3">
-            <button 
-              onClick={() => window.location.reload()} 
-              className="w-full btn-primary"
-            >
-              Retry
-            </button>
-            <button 
-              onClick={() => router.push('/')} 
-              className="w-full btn-secondary"
-            >
-              Home
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -347,6 +320,37 @@ export default function GamePage() {
               Leave
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show word selection modal for drawer
+  if (gameState.status === 'word-selection' && isCurrentPlayerDrawer() && gameState.wordChoices) {
+    return (
+      <div className="container mx-auto p-4 max-w-6xl min-h-screen flex items-center justify-center">
+        <WordSelectionModal
+          words={gameState.wordChoices}
+          deadline={gameState.wordSelectionDeadline}
+          onSelectWord={handleWordSelect}
+        />
+      </div>
+    );
+  }
+
+  // Show waiting screen for non-drawers during word selection
+  if (gameState.status === 'word-selection') {
+    const drawer = gameState.players.find(p => p.id === gameState.currentDrawer);
+    return (
+      <div className="container mx-auto p-4 max-w-md min-h-screen flex flex-col items-center justify-center">
+        <div className="card p-8 w-full text-center">
+          <div className="text-2xl mb-4">⏳</div>
+          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+            Word Selection
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            {drawer?.name || 'The drawer'} is choosing a word...
+          </p>
         </div>
       </div>
     );

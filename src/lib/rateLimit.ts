@@ -60,8 +60,13 @@ function cleanupExpiredEntries(now: number) {
 
 // Common rate limiters
 export const apiRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 60, // 60 requests per minute
+  windowMs: 60 * 1000, // 60 seconds (1 minute)
+  maxRequests: 120, // 120 requests per minute (allows polling every 0.5 seconds with buffer)
+});
+
+export const drawRateLimiter = rateLimit({
+  windowMs: 10 * 1000, // 10 seconds  
+  maxRequests: 200, // 200 draw updates per 10 seconds (very fast drawing)
 });
 
 export const guessRateLimiter = rateLimit({
@@ -71,7 +76,7 @@ export const guessRateLimiter = rateLimit({
 
 export const createGameRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  maxRequests: 3, // 3 games per minute
+  maxRequests: 5, // 5 games per minute (increased from 3)
 });
 
 // Helper to get client identifier (IP address or session)

@@ -34,8 +34,26 @@ export async function POST(
       );
     }
 
-    // Handle timeout
-    const result = GameManager.handleTimeOut(roomId);
+    const body = await request.json();
+    const { playerId, wordIndex } = body;
+
+    // Validate input
+    if (!playerId) {
+      return NextResponse.json(
+        { error: 'Player ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof wordIndex !== 'number' || wordIndex < 0 || wordIndex > 2) {
+      return NextResponse.json(
+        { error: 'Invalid word index (must be 0, 1, or 2)' },
+        { status: 400 }
+      );
+    }
+
+    // Select the word
+    const result = GameManager.selectWord(roomId, playerId, wordIndex);
 
     if (!result.success) {
       return NextResponse.json(
@@ -50,7 +68,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Error handling timeout:', error);
+    console.error('Error selecting word:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

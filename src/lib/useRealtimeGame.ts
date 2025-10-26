@@ -30,69 +30,65 @@ export function useRealtimeGame({
   // Polling function to get game updates
   const pollGameState = useCallback(async () => {
     try {
-      const result = await GameAPI.getGame(roomId);
+      const result = await GameAPI.getGame(roomId, playerId);
       if (result.success && result.gameState) {
         const newGameState = result.gameState;
         
-        // Only update if something has actually changed
-        const hasNewActivity = newGameState.lastActivity > lastUpdateRef.current;
-        const hasNewGuesses = newGameState.guesses.length !== lastGuessCountRef.current;
-        
-        if (hasNewActivity || hasNewGuesses) {
-          setGameState(newGameState);
-          onGameStateUpdate?.(newGameState);
-          lastUpdateRef.current = newGameState.lastActivity;
-          lastGuessCountRef.current = newGameState.guesses.length;
+        // Always update the game state to ensure timer updates
+        // The previous optimization was preventing timer updates
+        setGameState(newGameState);
+        onGameStateUpdate?.(newGameState);
+        lastUpdateRef.current = newGameState.lastActivity;
+        lastGuessCountRef.current = newGameState.guesses.length;
 
-          // Convert guesses to chat messages, but only add new ones
-          // IMPORTANT: Only show INCORRECT guesses in chat, hide correct ones
-          setMessages(prevMessages => {
-            const newMessagesMap = new Map<string, ChatMessage>();
-            
-            // Keep existing messages in the map (including system messages)
-            prevMessages.forEach(msg => {
-              newMessagesMap.set(msg.id, msg);
-            });
+        // Convert guesses to chat messages, but only add new ones
+        // IMPORTANT: Only show INCORRECT guesses in chat, hide correct ones
+        setMessages(prevMessages => {
+          const newMessagesMap = new Map<string, ChatMessage>();
+          
+          // Keep existing messages in the map (including system messages)
+          prevMessages.forEach(msg => {
+            newMessagesMap.set(msg.id, msg);
+          });
 
-            // Add new guesses that we haven't seen before
-            // Only add INCORRECT guesses to chat
-            newGameState.guesses.forEach(guess => {
-              const messageId = `guess-${guess.playerId}-${guess.timestamp}`;
-              if (!processedGuessesRef.current.has(messageId)) {
-                processedGuessesRef.current.add(messageId);
-                
-                // Only add incorrect guesses to chat
-                if (!guess.isCorrect) {
-                  const chatMessage: ChatMessage = {
-                    id: messageId,
-                    playerId: guess.playerId,
-                    playerName: guess.playerName,
-                    message: guess.guess,
+          // Add new guesses that we haven't seen before
+          // Only add INCORRECT guesses to chat
+          newGameState.guesses.forEach(guess => {
+            const messageId = `guess-${guess.playerId}-${guess.timestamp}`;
+            if (!processedGuessesRef.current.has(messageId)) {
+              processedGuessesRef.current.add(messageId);
+              
+              // Only add incorrect guesses to chat
+              if (!guess.isCorrect) {
+                const chatMessage: ChatMessage = {
+                  id: messageId,
+                  playerId: guess.playerId,
+                  playerName: guess.playerName,
+                  message: guess.guess,
+                  timestamp: guess.timestamp,
+                  isCorrect: false,
+                };
+                newMessagesMap.set(messageId, chatMessage);
+              } else {
+                // For correct guesses, add a system message (only once)
+                const systemMessageId = `system-correct-${guess.playerId}-${guess.timestamp}`;
+                if (!newMessagesMap.has(systemMessageId)) {
+                  const systemMessage: ChatMessage = {
+                    id: systemMessageId,
+                    playerId: 'system',
+                    playerName: 'System',
+                    message: `${guess.playerName} guessed the word!`,
                     timestamp: guess.timestamp,
-                    isCorrect: false,
                   };
-                  newMessagesMap.set(messageId, chatMessage);
-                } else {
-                  // For correct guesses, add a system message (only once)
-                  const systemMessageId = `system-correct-${guess.playerId}-${guess.timestamp}`;
-                  if (!newMessagesMap.has(systemMessageId)) {
-                    const systemMessage: ChatMessage = {
-                      id: systemMessageId,
-                      playerId: 'system',
-                      playerName: 'System',
-                      message: `${guess.playerName} guessed the word!`,
-                      timestamp: guess.timestamp,
-                    };
-                    newMessagesMap.set(systemMessageId, systemMessage);
-                  }
+                  newMessagesMap.set(systemMessageId, systemMessage);
                 }
               }
-            });
-
-            // Convert map back to array and sort by timestamp
-            return Array.from(newMessagesMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+            }
           });
-        }
+
+          // Convert map back to array and sort by timestamp
+          return Array.from(newMessagesMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+        });
         
         if (!isConnected) {
           setIsConnected(true);
@@ -111,28 +107,31 @@ export function useRealtimeGame({
       console.error('Error polling game state:', error);
       onError?.('Connection error');
     }
-  }, [roomId, isConnected, onGameStateUpdate, onError]);
+  }, [roomId, playerId, isConnected, onGameStateUpdate, onError]);
 
   // Start polling when component mounts
   useEffect(() => {
-    if (roomId && playerId) {
-      // Reset processed guesses when room changes
-      processedGuessesRef.current.clear();
-      lastGuessCountRef.current = 0;
-      
-      // Initial fetch
-      pollGameState();
-      
-      // Set up polling interval - 1 second for better performance
-      intervalRef.current = setInterval(pollGameState, 1000); // Poll every 1 second
-      
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      };
-    }
-  }, [roomId, playerId, pollGameState]);
+    if (!roomId || !playerId) return;
+
+    // Reset processed guesses when room changes
+    processedGuessesRef.current.clear();
+    lastGuessCountRef.current = 0;
+    
+    // Initial fetch
+    pollGameState();
+    
+    // Set up polling interval - 1 second for better performance
+    const interval = setInterval(pollGameState, 1000); // Poll every 1 second
+    intervalRef.current = interval;
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, playerId]); // Only re-run when roomId or playerId changes
 
   // Actions
   const sendDrawingUpdate = async (update: DrawingUpdate) => {
@@ -148,9 +147,9 @@ export function useRealtimeGame({
   };
 
   // Accepts optional timeLeft for time-based scoring
-  const submitGuess = async (guess: string, timeLeft?: number) => {
+  const submitGuess = async (guess: string) => {
     try {
-      const result = await GameAPI.submitGuess(roomId, playerId, guess, timeLeft);
+      const result = await GameAPI.submitGuess(roomId, playerId, guess);
       if (result.success && result.gameState) {
         // Update game state immediately for responsiveness
         setGameState(result.gameState);

@@ -1,11 +1,28 @@
 import { GameState, Player, GameSettings, DrawingUpdate } from './types';
 import { getRandomWords } from './words';
 
+// Declare global broadcast function (set by server.js)
+declare global {
+  // eslint-disable-next-line no-var
+  var broadcastToRoom: ((roomId: string, message: any) => void) | undefined;
+  // eslint-disable-next-line no-var
+  var gamesStore: Map<string, GameState> | undefined;
+  // eslint-disable-next-line no-var
+  var gameTimersStore: Map<string, NodeJS.Timeout> | undefined;
+}
+
 // In-memory storage for games (in production, you'd use a database)
-const games: Map<string, GameState> = new Map();
+// Use global to persist across HMR reloads in development
+const games: Map<string, GameState> = global.gamesStore || new Map();
+if (!global.gamesStore) {
+  global.gamesStore = games;
+}
 
 // Server-side timers for each game
-const gameTimers: Map<string, NodeJS.Timeout> = new Map();
+const gameTimers: Map<string, NodeJS.Timeout> = global.gameTimersStore || new Map();
+if (!global.gameTimersStore) {
+  global.gameTimersStore = gameTimers;
+}
 
 export class GameManager {
   static createGame(roomId: string, hostName: string, settings: GameSettings): GameState {
@@ -43,6 +60,11 @@ export class GameManager {
     if (game) {
       // Update time remaining based on elapsed time for more accurate sync
       this.updateTimeRemaining(game);
+      
+      // Auto-end turn if time has expired
+      if (game.status === 'playing' && game.timeRemaining <= 0) {
+        this.endTurn(game);
+      }
     }
     return game;
   }
@@ -76,6 +98,7 @@ export class GameManager {
     game.players.push(player);
     game.lastActivity = Date.now();
 
+    this.broadcastGameUpdate(roomId);
     return { success: true, player };
   }
 
@@ -105,6 +128,7 @@ export class GameManager {
     
     this.startTurn(game);
 
+    this.broadcastGameUpdate(roomId);
     return { success: true };
   }
 
@@ -115,13 +139,10 @@ export class GameManager {
     game.guesses = [];
     game.roundScores = {};
     game.timeRemaining = game.settings.timePerRound;
-    game.turnStartTime = Date.now(); // Track when turn started
+    game.turnStartTime = undefined; // Don't start timer until word is selected
 
     // Clear any existing timer for this game
     this.clearGameTimer(game.roomId);
-
-    // Start server-side timer
-    this.startGameTimer(game);
 
     // Calculate which player should draw based on current turn
     const onlinePlayers = game.players.filter(p => p.isOnline);
@@ -131,11 +152,68 @@ export class GameManager {
       game.currentDrawer = onlinePlayers[playerIndex].id;
     }
 
-    // Choose random word based on difficulty
+    // Choose 3 random words for the drawer to select from
     const words = getRandomWords(game.settings.difficulty || 'medium', 3);
-    game.currentWord = words[0]; // In a real game, drawer would choose from 3 options
+    game.wordChoices = words;
+    game.currentWord = undefined; // No word selected yet
+    game.status = 'word-selection';
+    game.wordSelectionDeadline = Date.now() + 10000; // 10 seconds to choose
+
+    // Start word selection timeout timer
+    const wordSelectionTimer = setTimeout(() => {
+      // Auto-select first word if drawer doesn't choose in time
+      if (game.status === 'word-selection' && game.wordChoices && game.wordChoices.length > 0) {
+        this.selectWord(game.roomId, game.currentDrawer || '', 0);
+      }
+    }, 10000);
+
+    gameTimers.set(`${game.roomId}-word-selection`, wordSelectionTimer);
+    game.lastActivity = Date.now();
+    
+    this.broadcastGameUpdate(game.roomId);
+  }
+
+  static selectWord(roomId: string, playerId: string, wordIndex: number): { success: boolean; gameState?: GameState; error?: string } {
+    const game = games.get(roomId);
+    if (!game) {
+      return { success: false, error: 'Game not found' };
+    }
+
+    if (game.status !== 'word-selection') {
+      return { success: false, error: 'Not in word selection phase' };
+    }
+
+    if (game.currentDrawer !== playerId) {
+      return { success: false, error: 'Only the drawer can select a word' };
+    }
+
+    if (!game.wordChoices || wordIndex < 0 || wordIndex >= game.wordChoices.length) {
+      return { success: false, error: 'Invalid word selection' };
+    }
+
+    // Clear word selection timer
+    const wordSelectionTimer = gameTimers.get(`${game.roomId}-word-selection`);
+    if (wordSelectionTimer) {
+      clearTimeout(wordSelectionTimer);
+      gameTimers.delete(`${game.roomId}-word-selection`);
+    }
+
+    // Set the selected word
+    game.currentWord = game.wordChoices[wordIndex];
+    game.wordChoices = undefined; // Clear choices
+    game.status = 'playing';
+    game.turnStartTime = Date.now(); // Start timer now
+    game.wordSelectionDeadline = undefined;
+
+    console.log(`[Game] Word selected for room ${roomId}. Timer started at ${game.turnStartTime}, duration: ${game.settings.timePerRound}s`);
+
+    // Start the round timer
+    this.startGameTimer(game);
 
     game.lastActivity = Date.now();
+
+    this.broadcastGameUpdate(roomId);
+    return { success: true, gameState: game };
   }
 
   static updateDrawing(roomId: string, update: DrawingUpdate): { success: boolean; gameState?: GameState; error?: string } {
@@ -171,10 +249,11 @@ export class GameManager {
 
     game.lastActivity = Date.now();
 
+    this.broadcastGameUpdate(roomId);
     return { success: true, gameState: game };
   }
 
-  static submitGuess(roomId: string, playerId: string, guess: string, timeLeft?: number): { 
+  static submitGuess(roomId: string, playerId: string, guess: string): { 
     success: boolean; 
     isCorrect?: boolean; 
     gameState?: GameState; 
@@ -217,12 +296,14 @@ export class GameManager {
 
     // Award points if correct
     if (isCorrect) {
-      // Use timeLeft from client if provided, else fallback to server's timeRemaining
-      const timeBonus = typeof timeLeft === 'number' ? Math.max(0, timeLeft) : Math.max(0, game.timeRemaining);
+      // Calculate time bonus based on server time only (prevents client manipulation)
+      const elapsed = Date.now() - (game.turnStartTime || Date.now());
+      const timeRemaining = Math.max(0, game.settings.timePerRound - Math.floor(elapsed / 1000));
+      
       // Points: base 100 + up to 100 bonus for speed (linear)
       const maxBonus = 100;
       const totalTime = game.settings.timePerRound;
-      const bonus = Math.round((timeBonus / totalTime) * maxBonus);
+      const bonus = Math.round((timeRemaining / totalTime) * maxBonus);
       const points = 100 + bonus;
 
       player.score += points;
@@ -257,6 +338,7 @@ export class GameManager {
 
     game.lastActivity = Date.now();
 
+    this.broadcastGameUpdate(roomId);
     return { success: true, isCorrect, gameState: game };
   }
 
@@ -280,6 +362,24 @@ export class GameManager {
       player.isOnline = true;
       game.lastActivity = Date.now();
     }
+  }
+
+  static reconnectPlayer(roomId: string, playerId: string): { success: boolean; gameState?: GameState; error?: string } {
+    const game = games.get(roomId);
+    if (!game) {
+      return { success: false, error: 'Game not found' };
+    }
+
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) {
+      return { success: false, error: 'Player not found in this game' };
+    }
+
+    // Mark player as online
+    player.isOnline = true;
+    game.lastActivity = Date.now();
+
+    return { success: true, gameState: game };
   }
 
   static leaveGame(roomId: string, playerId: string): { success: boolean; error?: string } {
@@ -409,23 +509,32 @@ export class GameManager {
 
   // Timer management methods
   static startGameTimer(game: GameState): void {
+    // Clear any existing timer first
+    this.clearGameTimer(game.roomId);
+    
+    // Check periodically if time has run out
     const timer = setInterval(() => {
-      if (game.status !== 'playing') {
+      // Re-fetch game from store in case it was updated
+      const currentGame = games.get(game.roomId);
+      if (!currentGame || currentGame.status !== 'playing') {
         this.clearGameTimer(game.roomId);
         return;
       }
 
-      game.timeRemaining = Math.max(0, game.timeRemaining - 1);
-      game.lastActivity = Date.now();
+      // Calculate actual time remaining based on elapsed time
+      this.updateTimeRemaining(currentGame);
 
       // Auto-timeout when time reaches 0
-      if (game.timeRemaining <= 0) {
+      if (currentGame.timeRemaining <= 0) {
+        console.log(`[Timer] Time expired for room ${game.roomId}, ending turn`);
         this.clearGameTimer(game.roomId);
-        this.endTurn(game);
+        this.endTurn(currentGame);
+        this.broadcastGameUpdate(game.roomId);
       }
-    }, 1000);
+    }, 1000); // Check every second
 
     gameTimers.set(game.roomId, timer);
+    console.log(`[Timer] Started timer for room ${game.roomId}`);
   }
 
   static clearGameTimer(roomId: string): void {
@@ -437,12 +546,23 @@ export class GameManager {
   }
 
   static updateTimeRemaining(game: GameState): void {
+    // Only update if we have a start time and game is playing
     if (!game.turnStartTime || game.status !== 'playing') {
       return;
     }
     
-    const elapsed = Math.floor((Date.now() - game.turnStartTime) / 1000);
-    game.timeRemaining = Math.max(0, game.settings.timePerRound - elapsed);
+    // Calculate based on elapsed time since turn started
+    const now = Date.now();
+    const elapsed = Math.floor((now - game.turnStartTime) / 1000);
+    const newTimeRemaining = Math.max(0, game.settings.timePerRound - elapsed);
+    
+    // Update time remaining
+    game.timeRemaining = newTimeRemaining;
+    
+    // Log for debugging (remove in production)
+    if (elapsed % 10 === 0) { // Log every 10 seconds
+      console.log(`[Timer] Room ${game.roomId}: ${newTimeRemaining}s remaining (elapsed: ${elapsed}s, start: ${game.turnStartTime})`);
+    }
   }
 
   // Cleanup inactive games (call this periodically)
@@ -457,5 +577,28 @@ export class GameManager {
         games.delete(roomId);
       }
     }
+  }
+
+  // Broadcast game state update to all connected WebSocket clients
+  private static broadcastGameUpdate(roomId: string): void {
+    if (global.broadcastToRoom) {
+      const game = games.get(roomId);
+      if (game) {
+        global.broadcastToRoom(roomId, {
+          type: 'game_update',
+          gameState: game,
+        });
+      }
+    }
+  }
+
+  // Wrapper for game state changes that need to be broadcast
+  static updateAndBroadcast(roomId: string, updater: (game: GameState) => void): GameState | null {
+    const game = games.get(roomId);
+    if (!game) return null;
+
+    updater(game);
+    this.broadcastGameUpdate(roomId);
+    return game;
   }
 }

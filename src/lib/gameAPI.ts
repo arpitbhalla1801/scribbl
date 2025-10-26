@@ -52,13 +52,16 @@ export class GameAPI {
     }
   }
 
-  static async getGame(roomId: string): Promise<{
+  static async getGame(roomId: string, playerId?: string): Promise<{
     success: boolean;
     gameState?: GameState;
     error?: string;
   }> {
     try {
-      const response = await fetch(`/api/games/${roomId}`);
+      const url = playerId 
+        ? `/api/games/${roomId}?playerId=${playerId}`
+        : `/api/games/${roomId}`;
+      const response = await fetch(url);
       const data = await response.json();
       return data;
     } catch {
@@ -93,7 +96,7 @@ export class GameAPI {
     }
   }
 
-  static async submitGuess(roomId: string, playerId: string, guess: string, timeLeft?: number): Promise<{
+  static async submitGuess(roomId: string, playerId: string, guess: string): Promise<{
     success: boolean;
     isCorrect?: boolean;
     gameState?: GameState;
@@ -105,7 +108,7 @@ export class GameAPI {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ playerId, guess, timeLeft }),
+        body: JSON.stringify({ playerId, guess }),
       });
 
       const data = await response.json();
@@ -149,6 +152,54 @@ export class GameAPI {
     try {
       const response = await fetch(`/api/games/${roomId}?playerId=${playerId}`, {
         method: 'DELETE',
+      });
+
+      const data = await response.json();
+      return data;
+    } catch {
+      return {
+        success: false,
+        error: 'Network error',
+      };
+    }
+  }
+
+  static async reconnectPlayer(roomId: string, playerId: string): Promise<{
+    success: boolean;
+    gameState?: GameState;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`/api/games/${roomId}/reconnect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ playerId }),
+      });
+
+      const data = await response.json();
+      return data;
+    } catch {
+      return {
+        success: false,
+        error: 'Network error',
+      };
+    }
+  }
+
+  static async selectWord(roomId: string, playerId: string, wordIndex: number): Promise<{
+    success: boolean;
+    gameState?: GameState;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`/api/games/${roomId}/select-word`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ playerId, wordIndex }),
       });
 
       const data = await response.json();

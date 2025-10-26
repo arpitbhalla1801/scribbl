@@ -1,12 +1,15 @@
-// Simple profanity filter
-// In production, use a library like 'bad-words' or a more robust solution
+// Profanity filter
+// For production, consider using a library like 'bad-words' or 'leo-profanity'
+// This is a basic implementation with common inappropriate words
 
 const badWords = [
-  // Add inappropriate words here
-  // This is a minimal list - you should expand this
-  'badword1',
-  'badword2',
-  // ... add more
+  // Common profanity (add more as needed)
+  'fuck', 'shit', 'bitch', 'damn', 'ass', 'bastard', 'crap', 'hell',
+  'piss', 'dick', 'cock', 'pussy', 'cunt', 'slut', 'whore', 'fag',
+  'nigger', 'nigga', 'retard', 'rape', 'nazi', 'kike', 'spic',
+  // Common variations and obfuscations
+  'fuk', 'fck', 'shyt', 'btch', 'azz', 'dck', 'psssy', 'cnt',
+  // Add more as needed based on your community
 ];
 
 // Common leetspeak substitutions
@@ -20,6 +23,7 @@ const leetSpeakMap: Record<string, string> = {
   '8': 'b',
   '@': 'a',
   '$': 's',
+  '!': 'i',
 };
 
 function normalizeLeetSpeak(text: string): string {
@@ -35,10 +39,16 @@ export function containsProfanity(text: string): boolean {
   
   // Remove spaces and special characters for checking
   const cleaned = normalized.replace(/[^a-z0-9]/g, '');
+  const withSpaces = normalized.replace(/[^a-z0-9\s]/g, ' ');
   
   return badWords.some(word => {
     const cleanWord = word.replace(/[^a-z0-9]/g, '');
-    return cleaned.includes(cleanWord) || normalized.includes(word);
+    // Check both cleaned (no spaces) and with spaces versions
+    // Use word boundaries for more accurate matching
+    const wordPattern = new RegExp(`\\b${word}\\b`, 'i');
+    return cleaned.includes(cleanWord) || 
+           wordPattern.test(withSpaces) ||
+           wordPattern.test(normalized);
   });
 }
 

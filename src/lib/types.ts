@@ -31,13 +31,15 @@ export interface TldrawSnapshot {
 
 export interface GameState {
   roomId: string;
-  status: 'waiting' | 'playing' | 'finished';
+  status: 'waiting' | 'playing' | 'finished' | 'word-selection';
   players: Player[];
   settings: GameSettings;
   currentRound: number;
   currentTurn: number; // Track which turn within the round
   totalTurns: number; // Total turns needed (players * rounds)
   currentWord?: string;
+  wordChoices?: string[]; // 3 word options for drawer to choose from
+  wordSelectionDeadline?: number; // Timestamp when word selection times out
   currentDrawer?: string;
   timeRemaining: number;
   turnStartTime?: number; // Server timestamp when current turn started
@@ -69,7 +71,6 @@ export interface JoinGameRequest {
 export interface GuessRequest {
   playerId: string;
   guess: string;
-  timeLeft?: number; // seconds left on client timer
 }
 
 export interface DrawingUpdate {

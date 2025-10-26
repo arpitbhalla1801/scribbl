@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 
 interface TimerProps {
@@ -11,61 +11,28 @@ interface TimerProps {
 
 
 const Timer: React.FC<TimerProps> = ({ timeRemaining, totalTime, onTimeEnd }) => {
-  // Local timer state that syncs with server
-  const [seconds, setSeconds] = useState(timeRemaining);
-  const prevTimeRef = useRef(timeRemaining);
+  // Track if time end callback was called for this turn
   const timeEndCalled = useRef(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevTimeRef = useRef(timeRemaining);
 
-  // Sync with server timeRemaining - always prioritize server time
+  // Reset timeEndCalled flag when a new turn starts (time increases)
   useEffect(() => {
-    // New turn detected (time increased)
     if (timeRemaining > prevTimeRef.current) {
-      setSeconds(timeRemaining);
       timeEndCalled.current = false;
-    } 
-    // Server time sync - accept server value if it's different by more than 1 second
-    // This handles network latency and drift
-    else if (Math.abs(timeRemaining - seconds) > 1) {
-      setSeconds(timeRemaining);
     }
-    
     prevTimeRef.current = timeRemaining;
-  }, [timeRemaining, seconds]);
+  }, [timeRemaining]);
 
-  // Local countdown with better sync
+  // Call onTimeEnd when server reports time is up
   useEffect(() => {
-    // Clear any existing timer
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (timeRemaining <= 0 && onTimeEnd && !timeEndCalled.current) {
+      timeEndCalled.current = true;
+      onTimeEnd();
     }
+  }, [timeRemaining, onTimeEnd]);
 
-    if (seconds <= 0) {
-      if (onTimeEnd && !timeEndCalled.current) {
-        timeEndCalled.current = true;
-        onTimeEnd();
-      }
-      return;
-    }
-
-    // Start countdown
-    intervalRef.current = setInterval(() => {
-      setSeconds((prev) => {
-        const newValue = prev - 1;
-        return Math.max(0, newValue);
-      });
-    }, 1000);
-
-    // Cleanup
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [seconds, onTimeEnd]);
-
+  // Use server time directly - no local countdown
+  const seconds = timeRemaining;
   const percentage = (seconds / totalTime) * 100;
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;

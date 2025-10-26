@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GameManager } from '@/lib/gameManager';
 import { CreateGameRequest } from '@/lib/types';
+import { createGameRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
+import { validateUsername } from '@/lib/validation';
+import { initializeServer } from '@/lib/serverInit';
+
+// Initialize server services on first API call
+initializeServer();
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimitResult = createGameRateLimiter(clientId);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000))
+          }
+        }
+      );
+    }
+
     const body: CreateGameRequest = await request.json();
     const { playerName, settings } = body;
 
@@ -11,6 +33,15 @@ export async function POST(request: NextRequest) {
     if (!playerName || !playerName.trim()) {
       return NextResponse.json(
         { error: 'Player name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate username
+    const usernameValidation = validateUsername(playerName);
+    if (!usernameValidation.valid) {
+      return NextResponse.json(
+        { error: usernameValidation.error },
         { status: 400 }
       );
     }

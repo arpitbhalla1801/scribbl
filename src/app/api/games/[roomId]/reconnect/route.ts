@@ -34,8 +34,19 @@ export async function POST(
       );
     }
 
-    // Handle timeout
-    const result = GameManager.handleTimeOut(roomId);
+    const body = await request.json();
+    const { playerId } = body;
+
+    // Validate input
+    if (!playerId) {
+      return NextResponse.json(
+        { error: 'Player ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Try to reconnect the player
+    const result = GameManager.reconnectPlayer(roomId, playerId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -50,7 +61,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Error handling timeout:', error);
+    console.error('Error reconnecting player:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
