@@ -1,5 +1,5 @@
-// Import the words array
-import { words } from '../words/skribbl_words_array';
+// Import the curated drawable words array
+import { drawableWords } from '../words/drawable_words';
 
 interface WordDifficulty {
   easy: string[];
@@ -15,17 +15,14 @@ const categorizeWords = (): WordDifficulty => {
     hard: []
   };
 
-  // Skip the first two elements ("word", "count") and categorize the rest
-  for (let i = 2; i < words.length; i++) {
-    const word = words[i];
-    if (typeof word === 'string') {
-      if (word.length <= 4) {
-        difficulty.easy.push(word);
-      } else if (word.length <= 7) {
-        difficulty.medium.push(word);
-      } else {
-        difficulty.hard.push(word);
-      }
+  // Categorize drawable words by length
+  for (const word of drawableWords) {
+    if (word.length <= 5) {
+      difficulty.easy.push(word);
+    } else if (word.length <= 8) {
+      difficulty.medium.push(word);
+    } else {
+      difficulty.hard.push(word);
     }
   }
 
@@ -56,4 +53,20 @@ export function getRandomWord(difficulty: 'easy' | 'medium' | 'hard'): string {
 
 export function getAllWords(): string[] {
   return [...wordsByDifficulty.easy, ...wordsByDifficulty.medium, ...wordsByDifficulty.hard];
+}
+
+// Get word stats for debugging/info
+export function getWordStats() {
+  return {
+    total: drawableWords.length,
+    easy: wordsByDifficulty.easy.length,
+    medium: wordsByDifficulty.medium.length,
+    hard: wordsByDifficulty.hard.length,
+  };
+}
+
+// Log word stats for verification
+if (typeof window === 'undefined') {
+  const stats = getWordStats();
+  console.log('📝 Drawable words loaded:', stats);
 }
