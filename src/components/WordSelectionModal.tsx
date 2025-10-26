@@ -41,7 +41,7 @@ export default function WordSelectionModal({
         </p>
         
         <div className="space-y-3">
-          {words.map((word, index) => (
+          {words.map((word) => (
             <button
               key={word}
               onClick={() => onSelectWord(word)}

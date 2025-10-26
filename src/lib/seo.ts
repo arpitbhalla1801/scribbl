@@ -36,7 +36,7 @@ export function generateSEO(config: SEOConfig = {}): Metadata {
     authors: [{ name: 'Your Name' }],
     creator: 'Your Name',
     openGraph: {
-      type: seo.type as any,
+      type: seo.type as 'website' | 'article',
       title: seo.title,
       description: seo.description,
       url: seo.url,
