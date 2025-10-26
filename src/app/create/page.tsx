@@ -9,6 +9,7 @@ export default function CreateGamePage() {
   const [playerName, setPlayerName] = useState("");
   const [rounds, setRounds] = useState(3);
   const [timePerRound, setTimePerRound] = useState(60);
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [isLoading, setIsLoading] = useState(false);
   
   const handleSubmit = async (e: FormEvent) => {
@@ -26,6 +27,7 @@ export default function CreateGamePage() {
           settings: {
             rounds,
             timePerRound,
+            difficulty,
           },
         }),
       });
@@ -105,6 +107,22 @@ export default function CreateGamePage() {
                   <option value={120}>120</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="difficulty" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Difficulty
+              </label>
+              <select
+                id="difficulty"
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+                className="w-full"
+              >
+                <option value="easy">Easy (Short words)</option>
+                <option value="medium">Medium (Normal words)</option>
+                <option value="hard">Hard (Long words)</option>
+              </select>
             </div>
             
             <div className="flex gap-3 pt-4">
