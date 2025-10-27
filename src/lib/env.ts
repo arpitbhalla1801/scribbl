@@ -28,8 +28,15 @@ export function getEnvConfig(): EnvConfig {
   if (config.NODE_ENV === 'production') {
     const missingVars: string[] = [];
 
+    // Use placeholder if NEXT_PUBLIC_APP_URL is not set in production
     if (!config.NEXT_PUBLIC_APP_URL) {
-      missingVars.push('NEXT_PUBLIC_APP_URL');
+      console.warn('⚠️  NEXT_PUBLIC_APP_URL is not set. Using platform URL or localhost as fallback');
+      // Try to use platform-specific automatic URLs
+      config.NEXT_PUBLIC_APP_URL = 
+        process.env.RENDER_EXTERNAL_URL || // Render
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) || // Vercel
+        process.env.RAILWAY_PUBLIC_DOMAIN || // Railway
+        'http://localhost:3000'; // Fallback
     }
 
     if (!config.CLEANUP_API_TOKEN) {
