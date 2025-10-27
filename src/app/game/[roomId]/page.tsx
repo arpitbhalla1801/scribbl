@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { GameState, ChatMessage } from "@/lib/types";
+import { ChatMessage } from "@/lib/types";
 import { useRealtimeGame } from "@/lib/useRealtimeGame";
 import { GameAPI } from "@/lib/gameAPI";
 import TldrawCanvas from "@/components/TldrawCanvas";
@@ -27,7 +27,6 @@ export default function GamePage() {
   const {
     isConnected,
     gameState,
-    messages: realtimeMessages,
     submitGuess,
     startGame,
     sendChatMessage,
@@ -36,7 +35,7 @@ export default function GamePage() {
     roomId,
     playerId,
     playerName,
-    onGameStateUpdate: (newGameState) => {
+    onGameStateUpdate: () => {
       // State is already updated by the hook
     },
     onNewMessage: (message) => {
@@ -81,9 +80,6 @@ export default function GamePage() {
       setMessages(prev => {
         // Keep welcome message and add guess messages
         const welcome = prev.filter(m => m.id.startsWith('system-'));
-        const uniqueGuesses = guessMessages.filter(
-          g => !prev.some(p => p.id === g.id)
-        );
         return [...welcome, ...guessMessages];
       });
     }
@@ -325,56 +321,56 @@ export default function GamePage() {
     );
   }
 
-  // Show word selection modal for drawer
-  if (gameState.status === 'word-selection' && isCurrentPlayerDrawer() && gameState.wordChoices) {
-    return (
-      <div className="container mx-auto p-4 max-w-6xl min-h-screen flex items-center justify-center">
-        <WordSelectionModal
-          words={gameState.wordChoices}
-          deadline={gameState.wordSelectionDeadline}
-          onSelectWord={handleWordSelect}
-        />
-      </div>
-    );
-  }
-
-  // Show waiting screen for non-drawers during word selection
-  if (gameState.status === 'word-selection') {
-    const drawer = gameState.players.find(p => p.id === gameState.currentDrawer);
-    return (
-      <div className="container mx-auto p-4 max-w-md min-h-screen flex flex-col items-center justify-center">
-        <div className="card p-8 w-full text-center">
-          <div className="text-2xl mb-4">⏳</div>
-          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-            Word Selection
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            {drawer?.name || 'The drawer'} is choosing a word...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Main game view
+  const isWordSelection = gameState.status === 'word-selection';
+  const showWordSelectionModal = isWordSelection && isCurrentPlayerDrawer() && gameState.wordChoices;
+  const drawer = gameState.players.find(p => p.id === gameState.currentDrawer);
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl min-h-screen flex flex-col">
-      <div className="mb-4">
-        <GameHeader
-          roomId={roomId}
-          roundNumber={gameState.currentRound}
-          totalRounds={gameState.settings.rounds}
-          timeRemaining={gameState.timeRemaining}
-          totalTime={gameState.settings.timePerRound}
-          onTimeEnd={handleTimeEnd}
-          currentTurn={gameState.currentTurn}
-          totalTurns={gameState.totalTurns}
-        />
-      </div>
+    <div className="container mx-auto p-4 max-w-6xl min-h-screen flex flex-col relative">
+      {/* Word Selection Overlay */}
+      {isWordSelection && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+          {showWordSelectionModal ? (
+            <div className="relative z-50">
+              <WordSelectionModal
+                words={gameState.wordChoices!}
+                deadline={gameState.wordSelectionDeadline}
+                onSelectWord={handleWordSelect}
+              />
+            </div>
+          ) : (
+            <div className="card p-8 w-full max-w-md text-center relative z-50">
+              <div className="text-2xl mb-4">⏳</div>
+              <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                Word Selection
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {drawer?.name || 'The drawer'} is choosing a word...
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 grid-responsive">
+      <div className={isWordSelection ? 'blur-sm pointer-events-none' : ''}>
+        <div className="mb-4">
+          <GameHeader
+            roomId={roomId}
+            roundNumber={gameState.currentRound}
+            totalRounds={gameState.settings.rounds}
+            timeRemaining={gameState.timeRemaining}
+            totalTime={gameState.settings.timePerRound}
+            onTimeEnd={handleTimeEnd}
+            currentTurn={gameState.currentTurn}
+            totalTurns={gameState.totalTurns}
+          />
+        </div>
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 grid-responsive">
         {/* Drawing Board */}
-        <div className="lg:col-span-3 flex flex-col">
-          <div className="card flex-1 flex flex-col min-h-[400px]">
+        <div className="lg:col-span-4 flex flex-col">
+          <div className="card flex-1 flex flex-col min-h-[500px]">
             <div className="p-3 border-b border-card-border text-sm text-gray-600 dark:text-gray-400">
               {isCurrentPlayerDrawer() ? "Your turn to draw" : "Guess what's being drawn"}
             </div>
@@ -425,6 +421,7 @@ export default function GamePage() {
             />
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

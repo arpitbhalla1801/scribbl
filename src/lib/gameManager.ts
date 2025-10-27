@@ -3,7 +3,7 @@ import { getRandomWords } from './words';
 
 // Declare global broadcast function (set by server.js)
 declare global {
-  // eslint-disable-next-line no-var
+  // eslint-disable-next-line no-var, @typescript-eslint/no-explicit-any
   var broadcastToRoom: ((roomId: string, message: any) => void) | undefined;
   // eslint-disable-next-line no-var
   var gamesStore: Map<string, GameState> | undefined;

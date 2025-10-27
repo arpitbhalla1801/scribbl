@@ -24,6 +24,9 @@ const components: TLComponents = {
   NavigationPanel: null,
   HelperButtons: null,
   PageMenu: null,
+  QuickActions: null, // Hide the undo/redo/delete buttons
+  ContextMenu: null, // Hide right-click menu
+  KeyboardShortcutsDialog: null,
 };
 
 // UI overrides to customize the interface
@@ -120,6 +123,16 @@ const DrawingControls = ({ editor, isDrawing }: { editor: Editor | null; isDrawi
     }
   };
 
+  const handleUndo = () => {
+    if (!editor || !isDrawing) return;
+    editor.undo();
+  };
+
+  const handleRedo = () => {
+    if (!editor || !isDrawing) return;
+    editor.redo();
+  };
+
   if (!isDrawing) return null;
 
   return (
@@ -203,6 +216,32 @@ const DrawingControls = ({ editor, isDrawing }: { editor: Editor | null; isDrawi
                 />
               </button>
             ))}
+          </div>
+
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+
+          {/* Undo/Redo Buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleUndo}
+              className="p-1.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Undo (Ctrl+Z)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 7v6h6"></path>
+                <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+              </svg>
+            </button>
+            <button
+              onClick={handleRedo}
+              className="p-1.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Redo (Ctrl+Y)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 7v6h-6"></path>
+                <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
+              </svg>
+            </button>
           </div>
 
           <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>

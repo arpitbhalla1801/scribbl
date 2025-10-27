@@ -23,7 +23,7 @@ export type WSMessage =
 export class WebSocketManager {
   private static wss: WebSocketServer | null = null;
 
-  static initialize(server: any) {
+  static initialize() {
     if (this.wss) return this.wss;
 
     this.wss = new WebSocketServer({ noServer: true });
@@ -115,7 +115,7 @@ export class WebSocketManager {
     return this.wss;
   }
 
-  private static handleMessage(client: WSClient, message: any) {
+  private static handleMessage(client: WSClient, message: WSMessage) {
     if (message.type === 'pong') {
       client.isAlive = true;
     }
