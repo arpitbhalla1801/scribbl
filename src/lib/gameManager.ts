@@ -455,6 +455,18 @@ export class GameManager {
       return { success: false, error: 'Game not in progress' };
     }
 
+    // Verify the round has actually expired server-side. Without this check,
+    // any client (including the drawer) could call this endpoint at any
+    // moment to force-skip the current turn regardless of real time left.
+    if (!game.turnStartTime) {
+      return { success: false, error: 'Round has not started yet' };
+    }
+    const elapsedMs = Date.now() - game.turnStartTime;
+    const totalMs = game.settings.timePerRound * 1000;
+    if (elapsedMs < totalMs) {
+      return { success: false, error: 'Round has not timed out yet' };
+    }
+
     // Clear the timer and end turn
     this.clearGameTimer(roomId);
     game.timeRemaining = 0;
