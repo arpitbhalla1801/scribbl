@@ -26,11 +26,36 @@ export function useRealtimeGame({
   const lastUpdateRef = useRef<number>(0);
   const processedGuessesRef = useRef<Set<string>>(new Set());
   const lastGuessCountRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const consecutiveFailuresRef = useRef(0);
+  const activeRef = useRef(false);
+
+  const BASE_POLL_INTERVAL_MS = 1000;
+  const MAX_POLL_INTERVAL_MS = 15000;
 
   // Polling function to get game updates
   const pollGameState = useCallback(async () => {
+    // Skip the actual request while the tab isn't visible - just reschedule.
+    // The visibilitychange listener below triggers an immediate poll as soon
+    // as the tab becomes visible again, so this doesn't add extra latency.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      if (activeRef.current) {
+        intervalRef.current = setTimeout(pollGameState, BASE_POLL_INTERVAL_MS);
+      }
+      return;
+    }
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const result = await GameAPI.getGame(roomId, playerId);
+      const result = await GameAPI.getGame(roomId, playerId, controller.signal);
+      if (result.aborted) {
+        // Superseded by a newer poll (or the hook unmounted) - the request
+        // that replaced this one already owns scheduling the next poll.
+        return;
+      }
       if (result.success && result.gameState) {
         const newGameState = result.gameState;
         
@@ -94,18 +119,35 @@ export function useRealtimeGame({
           setIsConnected(true);
         }
 
+        consecutiveFailuresRef.current = 0;
+
         // Stop polling if game is finished
-        if (newGameState.status === 'finished' && intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
+        if (newGameState.status === 'finished') {
+          if (intervalRef.current) {
+            clearTimeout(intervalRef.current);
+            intervalRef.current = null;
+          }
           console.log('Game finished, stopping polling');
+          return;
         }
       } else if (result.error) {
         onError?.(result.error);
+        consecutiveFailuresRef.current++;
       }
     } catch (error) {
       console.error('Error polling game state:', error);
       onError?.('Connection error');
+      consecutiveFailuresRef.current++;
+    }
+
+    if (activeRef.current) {
+      // Back off after consecutive failures instead of hammering the server
+      // at a fixed rate during an outage; reset to the base interval as soon
+      // as a poll succeeds.
+      const delay = consecutiveFailuresRef.current > 0
+        ? Math.min(BASE_POLL_INTERVAL_MS * 2 ** consecutiveFailuresRef.current, MAX_POLL_INTERVAL_MS)
+        : BASE_POLL_INTERVAL_MS;
+      intervalRef.current = setTimeout(pollGameState, delay);
     }
   }, [roomId, playerId, isConnected, onGameStateUpdate, onError]);
 
@@ -116,19 +158,32 @@ export function useRealtimeGame({
     // Reset processed guesses when room changes
     processedGuessesRef.current.clear();
     lastGuessCountRef.current = 0;
-    
-    // Initial fetch
+    consecutiveFailuresRef.current = 0;
+    activeRef.current = true;
+
+    // Initial fetch; pollGameState schedules each subsequent poll itself.
     pollGameState();
-    
-    // Set up polling interval - 1 second for better performance
-    const interval = setInterval(pollGameState, 1000); // Poll every 1 second
-    intervalRef.current = interval;
-    
+
+    // Poll immediately when the tab becomes visible again, instead of
+    // waiting out whatever delay was already scheduled while it was hidden.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeRef.current) {
+        if (intervalRef.current) {
+          clearTimeout(intervalRef.current);
+        }
+        pollGameState();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      activeRef.current = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        clearTimeout(intervalRef.current);
         intervalRef.current = null;
       }
+      abortControllerRef.current?.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, playerId]); // Only re-run when roomId or playerId changes
@@ -214,9 +269,12 @@ export function useRealtimeGame({
   const leaveRoom = async () => {
     try {
       await GameAPI.leaveGame(roomId, playerId);
+      activeRef.current = false;
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        clearTimeout(intervalRef.current);
+        intervalRef.current = null;
       }
+      abortControllerRef.current?.abort();
       setIsConnected(false);
     } catch (error) {
       console.error('Error leaving room:', error);

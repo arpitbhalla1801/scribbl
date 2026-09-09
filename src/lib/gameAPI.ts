@@ -52,19 +52,23 @@ export class GameAPI {
     }
   }
 
-  static async getGame(roomId: string, playerId?: string): Promise<{
+  static async getGame(roomId: string, playerId?: string, signal?: AbortSignal): Promise<{
     success: boolean;
     gameState?: GameState;
     error?: string;
+    aborted?: boolean;
   }> {
     try {
-      const url = playerId 
+      const url = playerId
         ? `/api/games/${roomId}?playerId=${playerId}`
         : `/api/games/${roomId}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { signal });
       const data = await response.json();
       return data;
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return { success: false, aborted: true };
+      }
       return {
         success: false,
         error: 'Network error',
