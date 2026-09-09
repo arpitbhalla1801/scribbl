@@ -169,12 +169,19 @@ export class GameManager {
     // Clear any existing timer for this game
     this.clearGameTimer(game.roomId);
 
-    // Calculate which player should draw based on current turn
-    const onlinePlayers = game.players.filter(p => p.isOnline);
-    const playerIndex = (game.currentTurn - 1) % onlinePlayers.length;
-    
-    if (onlinePlayers.length > 0) {
-      game.currentDrawer = onlinePlayers[playerIndex].id;
+    // Calculate which player should draw based on current turn, using the
+    // fixed drawingOrder established at game start (skipping anyone who has
+    // since left the game entirely, or is currently offline) - not a fresh
+    // re-filter of game.players, which would silently reshuffle everyone's
+    // turn position whenever the online player count changes mid-game.
+    const eligibleDrawOrder = game.drawingOrder.filter(id => {
+      const player = game.players.find(p => p.id === id);
+      return player !== undefined && player.isOnline;
+    });
+    const playerIndex = (game.currentTurn - 1) % eligibleDrawOrder.length;
+
+    if (eligibleDrawOrder.length > 0) {
+      game.currentDrawer = eligibleDrawOrder[playerIndex];
     }
 
     // Choose 3 random words for the drawer to select from
