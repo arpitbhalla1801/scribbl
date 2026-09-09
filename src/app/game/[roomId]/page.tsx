@@ -13,6 +13,7 @@ import GameHeader from "@/components/GameHeader";
 import WordSelectionModal from "@/components/WordSelectionModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import CopyRoomCode from "@/components/CopyRoomCode";
+import GameResults from "@/components/GameResults";
 import { getPlayerSession } from "@/lib/sessionManager";
 
 export default function GamePage() {
@@ -201,86 +202,7 @@ export default function GamePage() {
 
   // Show final scores if game is finished
   if (gameState.status === 'finished') {
-    const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
-    
-    return (
-      <div className="container mx-auto p-4 max-w-4xl min-h-screen flex flex-col items-center justify-center">
-        <div className="card p-8 w-full max-w-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4 text-primary">🎉 Game Finished!</h1>
-            <p className="text-secondary text-lg">Thanks for playing in room {roomId}</p>
-          </div>
-          
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-6 text-center text-primary">🏆 Final Scores</h2>
-            <div className="space-y-4">
-              {sortedPlayers.map((player, index) => (
-                <div 
-                  key={player.id} 
-                  className={`flex items-center justify-between p-4 rounded-xl transition-all ${
-                    index === 0 
-                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-2 border-yellow-200 dark:border-yellow-700' 
-                      : index === 1 
-                        ? 'bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 border-2 border-gray-200 dark:border-gray-600' 
-                        : index === 2 
-                          ? 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-200 dark:border-orange-700' 
-                          : 'bg-gray-50 dark:bg-gray-800/20 border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full font-bold text-lg ${
-                      index === 0 
-                        ? 'bg-yellow-400 text-yellow-900 shadow-lg' 
-                        : index === 1 
-                          ? 'bg-gray-300 text-gray-700 shadow-md' 
-                          : index === 2 
-                            ? 'bg-orange-300 text-orange-900 shadow-md' 
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
-                    }`}>
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                    </div>
-                    <div>
-                      <div className={`font-bold text-lg ${
-                        player.id === playerId ? 'text-primary' : 'text-primary'
-                      }`}>
-                        {player.name}
-                        {player.id === playerId && (
-                          <span className="ml-2 text-sm bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
-                            You
-                          </span>
-                        )}
-                      </div>
-                      {index === 0 && (
-                        <div className="text-sm text-secondary font-medium">Winner! 🎊</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{player.score}</div>
-                    <div className="text-sm text-secondary">points</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <button
-              onClick={() => router.push('/')}
-              className="w-full btn-primary text-lg py-4"
-            >
-              🎮 Play Again
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full btn-secondary text-lg py-3"
-            >
-              🏠 Back to Home
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <GameResults gameState={gameState} />;
   }
 
   // Show waiting room if game hasn't started
