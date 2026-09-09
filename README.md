@@ -85,8 +85,7 @@ src/
 │   │   └── games/          # Game-related endpoints
 │   ├── create/             # Create game page
 │   ├── join/               # Join game page
-│   ├── game/[roomId]/      # Game room page
-│   └── results/[roomId]/   # Game results page
+│   └── game/[roomId]/      # Game room page (includes final results screen)
 ├── components/             # React components
 ├── lib/                    # Utilities and game logic
 │   ├── gameManager.ts      # Core game state management
