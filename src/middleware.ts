@@ -25,9 +25,16 @@ export function middleware(request: NextRequest) {
   );
 
   // Content Security Policy
+  // 'unsafe-eval' is only needed in development, for Next.js's dev-mode
+  // eval-based source maps / hot reload. It is dropped in production,
+  // where none of the app's dependencies (including tldraw) require it.
+  // 'unsafe-inline' on script-src is still required for Next's inline
+  // hydration bootstrap script (__NEXT_DATA__); removing it needs a
+  // nonce-based setup, which is a bigger change than this fixes.
+  const isDev = process.env.NODE_ENV !== 'production';
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob: https:;
     font-src 'self' data:;
