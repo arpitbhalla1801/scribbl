@@ -12,6 +12,7 @@ import WordHint from "@/components/WordHint";
 import GameHeader from "@/components/GameHeader";
 import WordSelectionModal from "@/components/WordSelectionModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import CopyRoomCode from "@/components/CopyRoomCode";
 
 export default function GamePage() {
   const params = useParams();
@@ -267,11 +268,11 @@ export default function GamePage() {
     return (
       <div className="container mx-auto p-4 max-w-md min-h-screen flex flex-col items-center justify-center">
         <div className="card p-8 w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">Room {roomId}</h1>
-            <p className="text-gray-500 dark:text-gray-500">Waiting for players...</p>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">Waiting for players...</h1>
+            <CopyRoomCode roomId={roomId} />
           </div>
-          
+
           <div className="mb-8">
             <div className="text-sm text-gray-500 dark:text-gray-500 mb-4 text-center">
               {gameState.players.length}/8 players
