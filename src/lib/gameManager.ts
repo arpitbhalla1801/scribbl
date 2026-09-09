@@ -517,23 +517,6 @@ export class GameManager {
     return { success: true, gameState: game };
   }
 
-  static removePlayer(roomId: string, playerId: string): void {
-    const game = games.get(roomId);
-    if (!game) return;
-
-    game.players = game.players.filter(p => p.id !== playerId);
-    
-    // If host leaves, make someone else host
-    if (game.players.length > 0 && !game.players.some(p => p.isHost)) {
-      game.players[0].isHost = true;
-    }
-
-    // Clean up empty games
-    if (game.players.length === 0) {
-      games.delete(roomId);
-    }
-  }
-
   static generateRoomId(): string {
     let roomId: string;
     do {

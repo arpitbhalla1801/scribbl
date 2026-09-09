@@ -109,7 +109,17 @@ export async function DELETE(
       );
     }
 
-    GameManager.removePlayer(roomId, playerId);
+    // leaveGame (not removePlayer) - it also ends the current turn if the
+    // leaving player was mid-draw, so the round doesn't hang on a drawer
+    // who no longer exists in game.players.
+    const result = GameManager.leaveGame(roomId, playerId);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
