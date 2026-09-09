@@ -68,6 +68,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate difficulty - an unrecognized value would later crash
+    // getRandomWords() (wordsByDifficulty[difficulty] is undefined) after
+    // the game has already been marked 'playing', leaving it permanently
+    // stuck. GameSettings.difficulty is only a compile-time type; nothing
+    // stops a raw request body from carrying an arbitrary string.
+    const validDifficulties = ['easy', 'medium', 'hard'];
+    if (settings.difficulty !== undefined && !validDifficulties.includes(settings.difficulty)) {
+      return NextResponse.json(
+        { error: 'Difficulty must be one of: easy, medium, hard' },
+        { status: 400 }
+      );
+    }
+
     // Provide default difficulty if not specified
     const gameSettings = {
       ...settings,
