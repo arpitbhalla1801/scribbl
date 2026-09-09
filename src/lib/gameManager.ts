@@ -1,3 +1,4 @@
+import { randomInt, randomUUID } from 'crypto';
 import { GameState, Player, GameSettings, DrawingUpdate } from './types';
 import { getRandomWords } from './words';
 import { filterProfanity } from './validation';
@@ -525,16 +526,23 @@ export class GameManager {
     return { success: true, gameState: game };
   }
 
+  // Room codes are user-typed (6 chars, [A-Z0-9]), so they stay short - but
+  // drawn via a CSPRNG rather than Math.random(), which is not suitable for
+  // anything security-relevant.
+  private static readonly ROOM_ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
   static generateRoomId(): string {
     let roomId: string;
     do {
-      roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+      roomId = Array.from({ length: 6 }, () => this.ROOM_ID_CHARS[randomInt(this.ROOM_ID_CHARS.length)]).join('');
     } while (games.has(roomId));
     return roomId;
   }
 
   private static generatePlayerId(): string {
-    return Math.random().toString(36).substring(2, 15);
+    // playerId doubles as the sole bearer credential for acting as a given
+    // player, so it needs to be unguessable - randomUUID() is CSPRNG-backed.
+    return randomUUID();
   }
 
   // Timer management methods
