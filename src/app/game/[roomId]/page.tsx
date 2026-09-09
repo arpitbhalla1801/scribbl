@@ -11,6 +11,7 @@ import PlayerList from "@/components/PlayerList";
 import WordHint from "@/components/WordHint";
 import GameHeader from "@/components/GameHeader";
 import WordSelectionModal from "@/components/WordSelectionModal";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function GamePage() {
   const params = useParams();
@@ -170,25 +171,11 @@ export default function GamePage() {
 
   // Show loading while connecting
   if (!isConnected && !gameState) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-2 border-gray-300 dark:border-gray-700 rounded-full border-t-black dark:border-t-white mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Connecting...</div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Connecting..." />;
   }
 
   if (!gameState) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-2 border-gray-300 dark:border-gray-700 rounded-full border-t-black dark:border-t-white mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading..." />;
   }
 
   // Show final scores if game is finished
