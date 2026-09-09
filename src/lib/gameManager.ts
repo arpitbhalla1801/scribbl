@@ -1,5 +1,6 @@
 import { GameState, Player, GameSettings, DrawingUpdate } from './types';
 import { getRandomWords } from './words';
+import { filterProfanity } from './validation';
 
 // Declare global broadcast function (set by server.js)
 declare global {
@@ -306,12 +307,18 @@ export class GameManager {
     }
 
     const isCorrect = guess.toLowerCase().trim() === game.currentWord?.toLowerCase().trim();
-    
+
+    // Filter profanity from the guess text that gets displayed in chat when
+    // incorrect (correct guesses are never shown verbatim - see
+    // gameStateSanitizer). Filtering happens after the correctness check
+    // above so it can never cause a legitimate correct guess to be missed.
+    const displayGuess = filterProfanity(guess.trim());
+
     // Add guess to game state
     game.guesses.push({
       playerId,
       playerName: player.name,
-      guess: guess.trim(),
+      guess: displayGuess,
       isCorrect,
       timestamp: Date.now(),
     });
