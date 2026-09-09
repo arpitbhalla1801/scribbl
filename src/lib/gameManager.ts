@@ -622,13 +622,4 @@ export class GameManager {
     }
   }
 
-  // Wrapper for game state changes that need to be broadcast
-  static updateAndBroadcast(roomId: string, updater: (game: GameState) => void): GameState | null {
-    const game = games.get(roomId);
-    if (!game) return null;
-
-    updater(game);
-    this.broadcastGameUpdate(roomId);
-    return game;
-  }
 }
