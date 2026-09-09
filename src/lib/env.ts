@@ -26,13 +26,11 @@ export function getEnvConfig(): EnvConfig {
 
   // Validate required variables for production
   if (config.NODE_ENV === 'production') {
-    const missingVars: string[] = [];
-
     // Use placeholder if NEXT_PUBLIC_APP_URL is not set in production
     if (!config.NEXT_PUBLIC_APP_URL) {
       console.warn('⚠️  NEXT_PUBLIC_APP_URL is not set. Using platform URL or localhost as fallback');
       // Try to use platform-specific automatic URLs
-      config.NEXT_PUBLIC_APP_URL = 
+      config.NEXT_PUBLIC_APP_URL =
         process.env.RENDER_EXTERNAL_URL || // Render
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) || // Vercel
         process.env.RAILWAY_PUBLIC_DOMAIN || // Railway
@@ -40,13 +38,7 @@ export function getEnvConfig(): EnvConfig {
     }
 
     if (!config.CLEANUP_API_TOKEN) {
-      console.warn('⚠️  CLEANUP_API_TOKEN is not set. Using default token (not secure for production)');
-    }
-
-    if (missingVars.length > 0) {
-      throw new Error(
-        `Missing required environment variables in production: ${missingVars.join(', ')}`
-      );
+      console.warn('⚠️  CLEANUP_API_TOKEN is not set. The cleanup endpoint will refuse all requests until it is configured.');
     }
 
     // Validate URL format
