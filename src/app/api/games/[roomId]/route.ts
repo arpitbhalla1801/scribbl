@@ -40,7 +40,7 @@ export async function GET(
       );
     }
 
-    const game = GameManager.getGame(roomId);
+    const game = GameManager.getGame(roomId, playerId || undefined);
 
     if (!game) {
       return NextResponse.json(

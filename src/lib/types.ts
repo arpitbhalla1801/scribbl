@@ -6,6 +6,7 @@ export interface Player {
   score: number;
   isHost: boolean;
   isOnline: boolean;
+  lastSeenAt: number; // Server timestamp of the player's last request (heartbeat)
 }
 
 export interface GameSettings {

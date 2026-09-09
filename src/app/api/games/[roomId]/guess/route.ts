@@ -67,7 +67,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId);
+    const game = GameManager.getGame(roomId, playerId);
     const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
     return NextResponse.json({

@@ -24,6 +24,11 @@ if (!global.gameTimersStore) {
   global.gameTimersStore = gameTimers;
 }
 
+// A player is considered offline once this long has passed since their last
+// request. The live client polls every 1s, so this leaves generous headroom
+// for network jitter without letting a truly-gone player linger too long.
+const HEARTBEAT_TIMEOUT_MS = 5000;
+
 export class GameManager {
   static createGame(roomId: string, hostName: string, settings: GameSettings): GameState {
     const host: Player = {
@@ -32,6 +37,7 @@ export class GameManager {
       score: 0,
       isHost: true,
       isOnline: true,
+      lastSeenAt: Date.now(),
     };
 
     const gameState: GameState = {
@@ -55,18 +61,36 @@ export class GameManager {
     return gameState;
   }
 
-  static getGame(roomId: string): GameState | null {
+  static getGame(roomId: string, callerId?: string): GameState | null {
     const game = games.get(roomId) || null;
     if (game) {
+      // Record a heartbeat for whichever player made this request, and mark
+      // anyone who hasn't been seen recently as offline. The live client
+      // polls this endpoint every second for every connected player, so it
+      // doubles as the presence signal - a closed tab simply stops calling it.
+      this.updatePresence(game, callerId);
+
       // Update time remaining based on elapsed time for more accurate sync
       this.updateTimeRemaining(game);
-      
+
       // Auto-end turn if time has expired
       if (game.status === 'playing' && game.timeRemaining <= 0) {
         this.endTurn(game);
       }
     }
     return game;
+  }
+
+  private static updatePresence(game: GameState, callerId?: string): void {
+    const now = Date.now();
+    for (const player of game.players) {
+      if (player.id === callerId) {
+        player.lastSeenAt = now;
+        player.isOnline = true;
+      } else if (now - (player.lastSeenAt ?? 0) > HEARTBEAT_TIMEOUT_MS) {
+        player.isOnline = false;
+      }
+    }
   }
 
   static joinGame(roomId: string, playerName: string): { success: boolean; player?: Player; error?: string } {
@@ -93,6 +117,7 @@ export class GameManager {
       score: 0,
       isHost: false,
       isOnline: true,
+      lastSeenAt: Date.now(),
     };
 
     game.players.push(player);
@@ -360,6 +385,7 @@ export class GameManager {
     const player = game.players.find(p => p.id === playerId);
     if (player) {
       player.isOnline = true;
+      player.lastSeenAt = Date.now();
       game.lastActivity = Date.now();
     }
   }
@@ -377,6 +403,7 @@ export class GameManager {
 
     // Mark player as online
     player.isOnline = true;
+    player.lastSeenAt = Date.now();
     game.lastActivity = Date.now();
 
     return { success: true, gameState: game };

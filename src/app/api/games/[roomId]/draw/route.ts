@@ -76,7 +76,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId);
+    const game = GameManager.getGame(roomId, body.playerId);
 
     return NextResponse.json({
       success: true,
