@@ -467,10 +467,14 @@ export class GameManager {
     } else {
       // Move to next turn
       game.currentTurn++;
-      
-      // Update current round number for display
-      const onlinePlayers = game.players.filter(p => p.isOnline);
-      game.currentRound = Math.ceil(game.currentTurn / onlinePlayers.length);
+
+      // Update current round number for display, using the FIXED player
+      // count from the drawingOrder snapshot taken at game start (the same
+      // count totalTurns was derived from) - not a live re-filter, which
+      // would make the round number drift if the online count changes
+      // mid-game (e.g. round could appear to exceed settings.rounds).
+      const totalDrawers = game.drawingOrder.length || 1;
+      game.currentRound = Math.ceil(game.currentTurn / totalDrawers);
       
       // Start next turn
       this.startTurn(game);
