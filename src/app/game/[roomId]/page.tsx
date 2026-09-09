@@ -69,18 +69,36 @@ export default function GamePage() {
   // Sync messages from game state
   useEffect(() => {
     if (gameState?.guesses) {
-      const guessMessages: ChatMessage[] = gameState.guesses.map((guess, idx) => ({
-        id: `guess-${idx}-${guess.playerId}`,
-        playerId: guess.playerId,
-        playerName: guess.playerName,
-        message: guess.guess,
-        timestamp: guess.timestamp,
-        isCorrect: guess.isCorrect,
-      }));
+      // Never render the literal text of a correct guess - it IS the answer, and
+      // broadcasting it would spoil the round for everyone still guessing. Show a
+      // generic system message instead, same as the (previously unused) dedup
+      // logic in useRealtimeGame's own message pipeline.
+      const guessMessages: ChatMessage[] = gameState.guesses.map((guess, idx) =>
+        guess.isCorrect
+          ? {
+              id: `system-correct-${idx}-${guess.playerId}`,
+              playerId: 'system',
+              playerName: 'System',
+              message: `${guess.playerName} guessed the word!`,
+              timestamp: guess.timestamp,
+            }
+          : {
+              id: `guess-${idx}-${guess.playerId}`,
+              playerId: guess.playerId,
+              playerName: guess.playerName,
+              message: guess.guess,
+              timestamp: guess.timestamp,
+              isCorrect: false,
+            }
+      );
       setMessages(prev => {
-        // Keep welcome message and add guess messages
-        const welcome = prev.filter(m => m.id.startsWith('system-'));
-        return [...welcome, ...guessMessages];
+        // Keep persistent system messages (welcome, time's-up); guess-derived
+        // messages (including correct-guess system messages) are regenerated
+        // fresh from gameState.guesses every time, so drop the stale copies.
+        const persistentSystem = prev.filter(
+          m => m.id.startsWith('system-') && !m.id.startsWith('system-correct-')
+        );
+        return [...persistentSystem, ...guessMessages].sort((a, b) => a.timestamp - b.timestamp);
       });
     }
   }, [gameState?.guesses]);
