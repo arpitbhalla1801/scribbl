@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 
 interface Message {
-  id: number;
+  id: string;
   username: string;
   text: string;
   isCorrect?: boolean;

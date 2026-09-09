@@ -358,7 +358,7 @@ export default function GamePage() {
               username={playerName}
               onMessageSend={handleSendMessage}
               messages={messages.map(m => ({
-                id: parseInt(m.id.split('-')[1]) || Date.now(),
+                id: m.id,
                 username: m.playerName,
                 text: m.message,
                 isCorrect: m.isCorrect,
