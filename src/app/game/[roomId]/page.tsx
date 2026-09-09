@@ -13,17 +13,37 @@ import GameHeader from "@/components/GameHeader";
 import WordSelectionModal from "@/components/WordSelectionModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import CopyRoomCode from "@/components/CopyRoomCode";
+import { getPlayerSession } from "@/lib/sessionManager";
 
 export default function GamePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const roomId = (params?.roomId ?? "") as string;
-  const playerName = searchParams?.get("name") || "Guest";
-  const playerId = searchParams?.get("playerId") || "";
+  const urlPlayerId = searchParams?.get("playerId") || "";
+  const urlPlayerName = searchParams?.get("name") || "";
+
+  // Fall back to a saved session if the URL is missing playerId (e.g. a
+  // bookmarked/shared link that dropped the query string) - without this,
+  // sessionManager.savePlayerSession() had nothing that ever read it back.
+  const savedSession = !urlPlayerId && roomId ? getPlayerSession(roomId) : null;
+  const playerId = urlPlayerId || savedSession?.playerId || "";
+  const playerName = urlPlayerName || savedSession?.playerName || "Guest";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const welcomeMessageSent = useRef<string | null>(null);
+  const reconnectAttempted = useRef(false);
+
+  // Explicitly tell the server this player is (re)connecting, e.g. after a
+  // page reload where the session was restored from storage above.
+  useEffect(() => {
+    if (playerId && roomId && !reconnectAttempted.current) {
+      reconnectAttempted.current = true;
+      GameAPI.reconnectPlayer(roomId, playerId).catch(err => {
+        console.error('Failed to reconnect:', err);
+      });
+    }
+  }, [playerId, roomId]);
 
   // Real-time game connection using optimized HTTP polling
   const {

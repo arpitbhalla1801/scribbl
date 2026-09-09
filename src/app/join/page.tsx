@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { savePlayerSession } from "@/lib/sessionManager";
 
 export default function JoinGamePage() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function JoinGamePage() {
         throw new Error(data.error || 'Failed to join game');
       }
 
+      savePlayerSession(gameCode, data.playerId, playerName.trim());
       router.push(`/game/${gameCode}?playerId=${data.playerId}&name=${encodeURIComponent(playerName.trim())}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to join game');

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { savePlayerSession } from "@/lib/sessionManager";
 
 export default function CreateGamePage() {
   const router = useRouter();
@@ -37,6 +38,9 @@ export default function CreateGamePage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create game');
       }
+
+      // Save the session so a reload/lost URL param can still recover it
+      savePlayerSession(data.roomId, data.playerId, playerName);
 
       // Navigate to the game room with the player ID and name
       router.push(`/game/${data.roomId}?playerId=${data.playerId}&name=${encodeURIComponent(playerName)}`);
