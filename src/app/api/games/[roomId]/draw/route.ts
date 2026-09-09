@@ -48,7 +48,7 @@ export async function POST(
       );
     }
 
-    if (!['stroke', 'clear', 'tldraw_snapshot'].includes(body.type)) {
+    if (body.type !== 'tldraw_snapshot') {
       return NextResponse.json(
         { error: 'Invalid update type' },
         { status: 400 }
@@ -56,7 +56,7 @@ export async function POST(
     }
 
     // Validate snapshot size to prevent DoS
-    if (body.type === 'tldraw_snapshot' && body.tldrawSnapshot) {
+    if (body.tldrawSnapshot) {
       const snapshotSize = JSON.stringify(body.tldrawSnapshot).length;
       if (snapshotSize > MAX_SNAPSHOT_SIZE) {
         return NextResponse.json(

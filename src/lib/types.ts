@@ -15,14 +15,6 @@ export interface GameSettings {
   difficulty?: 'easy' | 'medium' | 'hard';
 }
 
-export interface DrawingStroke {
-  id: string;
-  points: Array<{ x: number; y: number }>;
-  color: string;
-  width: number;
-  timestamp: number;
-}
-
 // Tldraw snapshot data
 export interface TldrawSnapshot {
   snapshot: TLStoreSnapshot; // TLStoreSnapshot from tldraw
@@ -44,8 +36,7 @@ export interface GameState {
   currentDrawer?: string;
   timeRemaining: number;
   turnStartTime?: number; // Server timestamp when current turn started
-  drawing: DrawingStroke[]; // Legacy drawing system (kept for compatibility)
-  tldrawSnapshot?: TldrawSnapshot; // New tldraw-based drawing system
+  tldrawSnapshot?: TldrawSnapshot;
   guesses: Array<{
     playerId: string;
     playerName: string;
@@ -76,9 +67,8 @@ export interface GuessRequest {
 
 export interface DrawingUpdate {
   playerId: string;
-  type: 'stroke' | 'clear' | 'tldraw_snapshot';
-  stroke?: DrawingStroke;
-  tldrawSnapshot?: TLStoreSnapshot; // TLStoreSnapshot from tldraw
+  type: 'tldraw_snapshot';
+  tldrawSnapshot: TLStoreSnapshot;
 }
 
 export interface ChatMessage {

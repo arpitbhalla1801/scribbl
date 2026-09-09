@@ -103,37 +103,6 @@ export class TldrawSyncService {
     }
   }
 
-  // Clear the canvas
-  async clearCanvas() {
-    if (!this.isDrawing) return;
-
-    try {
-      const response = await fetch(`/api/games/${this.roomId}/draw`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          playerId: this.playerId,
-          type: 'clear',
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to clear canvas:', await response.text());
-        return;
-      }
-
-      // Clear local canvas
-      if (this.editor) {
-        this.editor.selectAll();
-        this.editor.deleteShapes(this.editor.getSelectedShapeIds());
-      }
-    } catch (error) {
-      console.error('Error clearing canvas:', error);
-    }
-  }
-
   cleanup() {
     this.stopSyncing();
     this.editor = null;

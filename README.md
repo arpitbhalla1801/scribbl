@@ -44,7 +44,7 @@ Key TypeScript interfaces defined in `src/lib/types.ts`:
 - `GameState` - Complete game state including players, settings, and current round
 - `Player` - Player information and status
 - `GameSettings` - Configurable game parameters
-- `DrawingStroke` - Drawing data structure
+- `DrawingUpdate` - Drawing sync payload (tldraw snapshots)
 
 ### Word System
 
