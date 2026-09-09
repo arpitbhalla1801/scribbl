@@ -182,7 +182,7 @@ export function useRealtimeGame({
 
   const handleRoundTimeout = async () => {
     try {
-      const result = await GameAPI.handleTimeOut(roomId);
+      const result = await GameAPI.handleTimeOut(roomId, playerId);
       if (result.success && result.gameState) {
         setGameState(result.gameState);
         onGameStateUpdate?.(result.gameState);

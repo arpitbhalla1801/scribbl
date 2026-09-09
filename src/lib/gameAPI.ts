@@ -212,7 +212,7 @@ export class GameAPI {
     }
   }
 
-  static async handleTimeOut(roomId: string): Promise<{
+  static async handleTimeOut(roomId: string, playerId: string): Promise<{
     success: boolean;
     gameState?: GameState;
     error?: string;
@@ -220,6 +220,10 @@ export class GameAPI {
     try {
       const response = await fetch(`/api/games/${roomId}/timeout`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ playerId }),
       });
 
       const data = await response.json();

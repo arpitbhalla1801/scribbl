@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { GuessRequest } from '@/lib/types';
 import { guessRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { sanitizeMessage, validateRoomId } from '@/lib/validation';
+import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 
 export async function POST(
   request: NextRequest,
@@ -67,11 +68,12 @@ export async function POST(
     }
 
     const game = GameManager.getGame(roomId);
+    const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
     return NextResponse.json({
       success: true,
       isCorrect: result.isCorrect,
-      gameState: game
+      gameState: sanitizedGame
     });
 
   } catch (error) {

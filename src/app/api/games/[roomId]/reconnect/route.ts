@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
+import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 
 export async function POST(
   request: NextRequest,
@@ -55,9 +56,13 @@ export async function POST(
       );
     }
 
+    const sanitizedGame = result.gameState
+      ? sanitizeGameStateForPlayer(result.gameState, playerId)
+      : result.gameState;
+
     return NextResponse.json({
       success: true,
-      gameState: result.gameState
+      gameState: sanitizedGame
     });
 
   } catch (error) {

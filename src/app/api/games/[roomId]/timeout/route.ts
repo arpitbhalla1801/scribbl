@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
+import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 
 export async function POST(
   request: NextRequest,
@@ -34,6 +35,16 @@ export async function POST(
       );
     }
 
+    // playerId is optional here for backwards compatibility, but required to
+    // sanitize the response - without it we fall back to returning raw state.
+    let playerId: string | undefined;
+    try {
+      const body = await request.json();
+      playerId = body?.playerId;
+    } catch {
+      playerId = undefined;
+    }
+
     // Handle timeout
     const result = GameManager.handleTimeOut(roomId);
 
@@ -44,9 +55,13 @@ export async function POST(
       );
     }
 
+    const sanitizedGame = result.gameState && playerId
+      ? sanitizeGameStateForPlayer(result.gameState, playerId)
+      : result.gameState;
+
     return NextResponse.json({
       success: true,
-      gameState: result.gameState
+      gameState: sanitizedGame
     });
 
   } catch (error) {
