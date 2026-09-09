@@ -3,11 +3,22 @@ import { triggerCleanup } from '@/lib/cleanupService';
 
 export async function POST(request: NextRequest) {
   try {
-    // In production, you'd want to add authentication here
-    // For now, this is an internal endpoint
+    const expectedToken = process.env.CLEANUP_API_TOKEN;
+
+    // Refuse rather than fall back to a known default - a deploy that
+    // forgets to set CLEANUP_API_TOKEN should not silently expose this
+    // endpoint to anyone who reads the source. Set CLEANUP_API_TOKEN
+    // locally to use this endpoint in development too.
+    if (!expectedToken) {
+      console.error('CLEANUP_API_TOKEN is not set; refusing cleanup request');
+      return NextResponse.json(
+        { error: 'Cleanup endpoint is not configured' },
+        { status: 503 }
+      );
+    }
+
     const authHeader = request.headers.get('authorization');
-    const expectedToken = process.env.CLEANUP_API_TOKEN || 'dev-token';
-    
+
     if (authHeader !== `Bearer ${expectedToken}`) {
       return NextResponse.json(
         { error: 'Unauthorized' },
