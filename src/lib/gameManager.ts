@@ -451,9 +451,29 @@ export class GameManager {
   }
 
   static endTurn(game: GameState): void {
-    // Clear the timer for the current turn
+    // Clear the round timer.
     this.clearGameTimer(game.roomId);
-    
+
+    // Reveal the word for a few seconds before moving on. Previously this
+    // jumped straight to the next word-selection (or 'finished') state in
+    // the same synchronous call, so there was never a moment where players
+    // could see the word or who guessed it - the round just silently
+    // vanished into the next phase with no feedback at all.
+    game.status = 'round-end';
+    game.timeRemaining = 0;
+    game.lastActivity = Date.now();
+
+    const revealTimer = setTimeout(() => {
+      this.completeTurnTransition(game);
+    }, this.ROUND_END_REVEAL_MS);
+    gameTimers.set(`${game.roomId}-round-end`, revealTimer);
+  }
+
+  private static readonly ROUND_END_REVEAL_MS = 3000;
+
+  private static completeTurnTransition(game: GameState): void {
+    gameTimers.delete(`${game.roomId}-round-end`);
+
     // Check if all turns are completed
     if (game.currentTurn >= game.totalTurns) {
       // Game is finished
@@ -473,12 +493,13 @@ export class GameManager {
       // mid-game (e.g. round could appear to exceed settings.rounds).
       const totalDrawers = game.drawingOrder.length || 1;
       game.currentRound = Math.ceil(game.currentTurn / totalDrawers);
-      
+
       // Start next turn
       this.startTurn(game);
     }
-    
+
     game.lastActivity = Date.now();
+    this.broadcastGameUpdate(game.roomId);
   }
 
   static handleTimeOut(roomId: string): { success: boolean; gameState?: GameState; error?: string } {

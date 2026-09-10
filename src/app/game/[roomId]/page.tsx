@@ -133,17 +133,6 @@ export default function GamePage() {
     }
   }, [playerId, roomId, router]);
 
-  const addSystemMessage = (text: string) => {
-    const systemMessage: ChatMessage = {
-      id: `system-${Date.now()}`,
-      playerId: 'system',
-      playerName: 'System',
-      message: text,
-      timestamp: Date.now(),
-    };
-    setMessages(prev => [...prev, systemMessage]);
-  };
-
   const handleSendMessage = (message: string) => {
     if (gameState?.status === 'playing' && !isCurrentPlayerDrawer()) {
       submitGuess(message);
@@ -152,18 +141,17 @@ export default function GamePage() {
     }
   };
 
-  // Store the previous word to reveal after timeout
-  const prevWordRef = useRef<string | undefined>(undefined);
-
   const handleTimeEnd = async () => {
-    // Save the word before timeout (it will be replaced after handleRoundTimeout)
-    prevWordRef.current = gameState?.currentWord;
+    // timeRemaining also drops to 0 during the server's 'round-end' reveal
+    // phase (e.g. right after a correct guess ends the round early), not
+    // just on a genuine timeout - only actually call the timeout endpoint
+    // while a round is in progress; the server would reject it as a no-op
+    // otherwise, but there's no reason to make the call at all.
+    if (gameState?.status !== 'playing') return;
+    // The server holds a 'round-end' reveal phase before moving on (see
+    // GameManager.endTurn), so there's no need to capture/replay the word
+    // client-side here anymore - the reveal overlay below shows it.
     await handleRoundTimeout();
-    // After timeout and state update, show the word that just ended
-    if (prevWordRef.current) {
-      addSystemMessage(`Time is up! The word was "${prevWordRef.current}"`);
-      prevWordRef.current = undefined;
-    }
   };
 
   const handleStartGame = () => {
@@ -271,8 +259,10 @@ export default function GamePage() {
 
   // Main game view
   const isWordSelection = gameState.status === 'word-selection';
+  const isRoundEnd = gameState.status === 'round-end';
   const showWordSelectionModal = isWordSelection && isCurrentPlayerDrawer() && gameState.wordChoices;
   const drawer = gameState.players.find(p => p.id === gameState.currentDrawer);
+  const correctGuessers = gameState.guesses.filter(g => g.isCorrect).map(g => g.playerName);
 
   return (
     <div className="container mx-auto p-4 max-w-6xl min-h-screen flex flex-col relative">
@@ -301,7 +291,33 @@ export default function GamePage() {
         </div>
       )}
 
-      <div className={isWordSelection ? 'blur-sm pointer-events-none' : ''}>
+      {/* Round End Reveal Overlay - shown for a few seconds whenever a turn
+          ends (everyone guessed correctly, time ran out, or the drawer left),
+          so players can actually see the word and who got it before the game
+          moves on, instead of the round silently vanishing. */}
+      {isRoundEnd && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+          <div className="card p-8 w-full max-w-md text-center relative z-50">
+            <div className="text-3xl mb-3">{correctGuessers.length > 0 ? '🎉' : '⏰'}</div>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+              {correctGuessers.length > 0 ? 'Round Complete!' : "Time's Up!"}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
+              The word was:{' '}
+              <span className="font-bold text-gray-900 dark:text-white">
+                {gameState.currentWord}
+              </span>
+            </p>
+            {correctGuessers.length > 0 && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                {correctGuessers.join(', ')} guessed correctly!
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={isWordSelection || isRoundEnd ? 'blur-sm pointer-events-none' : ''}>
         <div className="mb-4">
           <GameHeader
             roomId={roomId}

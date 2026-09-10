@@ -24,7 +24,7 @@ export interface TldrawSnapshot {
 
 export interface GameState {
   roomId: string;
-  status: 'waiting' | 'playing' | 'finished' | 'word-selection';
+  status: 'waiting' | 'playing' | 'finished' | 'word-selection' | 'round-end';
   players: Player[];
   settings: GameSettings;
   currentRound: number;
