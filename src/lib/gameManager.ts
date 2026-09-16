@@ -147,10 +147,16 @@ export class GameManager {
     game.currentRound = 1;
     game.currentTurn = 1;
     
-    // Set up drawing order: each player draws once per round
-    const onlinePlayers = game.players.filter(p => p.isOnline);
-    game.drawingOrder = [...onlinePlayers.map(p => p.id)];
-    game.totalTurns = onlinePlayers.length * game.settings.rounds;
+    // Set up drawing order: everyone who joined the room draws once per
+    // round. Deliberately NOT filtered by isOnline here - a player who just
+    // joined may not have had their first poll land yet (isOnline is a
+    // heartbeat that only refreshes on request), and filtering them out at
+    // this exact moment would wrongly drop them from the whole game's turn
+    // rotation before they ever got a chance. isOnline filtering still
+    // applies turn-by-turn in startTurn, which is what actually matters:
+    // skipping someone who goes AWOL mid-game.
+    game.drawingOrder = game.players.map(p => p.id);
+    game.totalTurns = game.players.length * game.settings.rounds;
     
     this.startTurn(game);
 
