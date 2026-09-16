@@ -1,8 +1,12 @@
-export default function LoadingSpinner({ message = "Loading..." }: { message?: string }) {
+export default function LoadingSpinner({ message = "Loading…" }: { message?: string }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mb-4"></div>
-      <p className="text-gray-600 dark:text-gray-400">{message}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className="text-5xl mb-4 animate-bounce-in" aria-hidden="true">✏️</div>
+      <div
+        className="animate-spin rounded-full h-8 w-8 border-4 mb-4"
+        style={{ borderColor: 'var(--card-border)', borderTopColor: 'var(--marker-blue)' }}
+      />
+      <p className="text-secondary font-medium">{message}</p>
     </div>
   );
 }

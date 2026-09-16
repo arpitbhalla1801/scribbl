@@ -32,35 +32,27 @@ const Timer: React.FC<TimerProps> = ({ timeRemaining, totalTime, onTimeEnd }) =>
   }, [timeRemaining, onTimeEnd]);
 
   // Use server time directly - no local countdown
-  const seconds = timeRemaining;
+  const seconds = Math.max(0, timeRemaining);
   const percentage = (seconds / totalTime) * 100;
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  
-  const getColor = () => {
-    if (percentage > 50) return 'bg-green-500';
-    if (percentage > 20) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+  const urgent = percentage <= 20;
 
-  const getTextColor = () => {
-    if (percentage > 50) return 'text-green-600 dark:text-green-400';
-    if (percentage > 20) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-  
+  const color =
+    percentage > 50 ? 'var(--marker-green)' : percentage > 20 ? 'var(--marker-yellow)' : 'var(--marker-red)';
+
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center text-sm mb-2">
-        <span className="text-gray-600 dark:text-gray-400">Time</span>
-        <span className={`font-mono font-medium ${getTextColor()}`}>
-          {minutes}:{remainingSeconds.toString().padStart(2, '0')}
-        </span>
+    <div className="w-full flex items-center gap-3">
+      <div
+        className={`flex-shrink-0 rounded-full border-2 px-3 py-1 text-lg font-bold tabular-nums ${urgent ? 'animate-bounce-in' : ''}`}
+        style={{ borderColor: color, color, background: 'var(--card-bg)', fontFamily: 'var(--font-display)' }}
+      >
+        {minutes}:{remainingSeconds.toString().padStart(2, '0')}
       </div>
-      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${getColor()} transition-all duration-1000 ease-linear`}
-          style={{ width: `${Math.max(0, percentage)}%` }}
+      <div className="flex-1 h-3 rounded-full overflow-hidden border-2" style={{ borderColor: 'var(--ink)', background: 'var(--paper-dim)' }}>
+        <div
+          className="h-full transition-all duration-1000 ease-linear"
+          style={{ width: `${Math.max(0, percentage)}%`, background: color }}
         />
       </div>
     </div>

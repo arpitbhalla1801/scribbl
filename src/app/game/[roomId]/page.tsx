@@ -199,52 +199,58 @@ export default function GamePage() {
       <div className="container mx-auto p-4 max-w-md min-h-screen flex flex-col items-center justify-center">
         <div className="card p-8 w-full">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">Waiting for players...</h1>
+            <div className="text-3xl mb-2" aria-hidden="true">🎨</div>
+            <h1 className="text-2xl mb-4 text-primary">Waiting for players…</h1>
             <CopyRoomCode roomId={roomId} />
           </div>
 
           <div className="mb-8">
-            <div className="text-sm text-gray-500 dark:text-gray-500 mb-4 text-center">
+            <div className="text-sm text-secondary mb-3 text-center font-semibold">
               {gameState.players.length}/8 players
             </div>
-            
+
             <div className="space-y-2">
               {gameState.players.map((player) => (
-                <div 
-                  key={player.id} 
-                  className={`flex items-center justify-between p-3 rounded-md ${
-                    player.id === playerId 
-                      ? 'bg-gray-100 dark:bg-gray-800' 
-                      : 'bg-gray-50 dark:bg-gray-900'
-                  }`}
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between p-3 rounded-xl border-2"
+                  style={{
+                    borderColor: player.id === playerId ? 'var(--marker-blue)' : 'var(--card-border)',
+                    background: player.id === playerId ? 'var(--paper-dim)' : 'transparent',
+                  }}
                 >
-                  <span className="text-sm">{player.name}</span>
+                  <span className="text-sm font-semibold text-primary">{player.name}</span>
                   {player.isHost && (
-                    <span className="text-xs text-gray-500 dark:text-gray-500">Host</span>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-bold"
+                      style={{ background: 'var(--marker-blue)', color: '#fff' }}
+                    >
+                      HOST
+                    </span>
                   )}
                 </div>
               ))}
             </div>
           </div>
-          
+
           <div className="space-y-3">
             {isHost && gameState.players.length >= 2 ? (
               <button
                 onClick={handleStartGame}
                 className="w-full btn-primary"
               >
-                Start Game
+                Start game
               </button>
             ) : isHost ? (
-              <div className="w-full py-3 text-center text-gray-500 dark:text-gray-500 text-sm">
-                Need at least 2 players
+              <div className="w-full py-3 text-center text-muted text-sm">
+                Need at least 2 players to start
               </div>
             ) : (
-              <div className="w-full py-3 text-center text-gray-500 dark:text-gray-500 text-sm">
-                Waiting for host...
+              <div className="w-full py-3 text-center text-muted text-sm">
+                Waiting for the host to start…
               </div>
             )}
-            
+
             <button
               onClick={() => router.push('/')}
               className="w-full btn-secondary"
@@ -264,11 +270,15 @@ export default function GamePage() {
   const drawer = gameState.players.find(p => p.id === gameState.currentDrawer);
   const correctGuessers = gameState.guesses.filter(g => g.isCorrect).map(g => g.playerName);
 
+  const turnBanner = isCurrentPlayerDrawer()
+    ? "🖍️ Your turn — draw the word above!"
+    : "👀 Guess what's being drawn";
+
   return (
     <div className="container mx-auto p-4 max-w-6xl min-h-screen flex flex-col relative">
       {/* Word Selection Overlay */}
       {isWordSelection && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
           {showWordSelectionModal ? (
             <div className="relative z-50">
               <WordSelectionModal
@@ -278,13 +288,13 @@ export default function GamePage() {
               />
             </div>
           ) : (
-            <div className="card p-8 w-full max-w-md text-center relative z-50">
-              <div className="text-2xl mb-4">⏳</div>
-              <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                Word Selection
+            <div className="card p-8 w-full max-w-md text-center relative z-50 animate-pop-in">
+              <div className="text-3xl mb-4" aria-hidden="true">⏳</div>
+              <h2 className="text-xl mb-2 text-primary">
+                Picking a word…
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                {drawer?.name || 'The drawer'} is choosing a word...
+              <p className="text-secondary">
+                <span className="font-bold text-primary">{drawer?.name || 'The drawer'}</span> is choosing what to draw.
               </p>
             </div>
           )}
@@ -296,21 +306,21 @@ export default function GamePage() {
           so players can actually see the word and who got it before the game
           moves on, instead of the round silently vanishing. */}
       {isRoundEnd && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
-          <div className="card p-8 w-full max-w-md text-center relative z-50">
-            <div className="text-3xl mb-3">{correctGuessers.length > 0 ? '🎉' : '⏰'}</div>
-            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-              {correctGuessers.length > 0 ? 'Round Complete!' : "Time's Up!"}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+          <div className="card p-8 w-full max-w-md text-center relative z-50 animate-bounce-in">
+            <div className="text-4xl mb-3" aria-hidden="true">{correctGuessers.length > 0 ? '🎉' : '⏰'}</div>
+            <h2 className="text-2xl mb-2 text-primary">
+              {correctGuessers.length > 0 ? 'Round complete!' : "Time's up!"}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              The word was:{' '}
-              <span className="font-bold text-gray-900 dark:text-white">
+            <p className="text-secondary mb-3">
+              The word was{' '}
+              <span className="font-bold text-lg" style={{ color: 'var(--marker-blue)' }}>
                 {gameState.currentWord}
               </span>
             </p>
             {correctGuessers.length > 0 && (
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {correctGuessers.join(', ')} guessed correctly!
+              <p className="text-sm font-semibold" style={{ color: 'var(--marker-green)' }}>
+                ✓ {correctGuessers.join(', ')} guessed it!
               </p>
             )}
           </div>
@@ -332,34 +342,38 @@ export default function GamePage() {
         </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 grid-responsive">
-        {/* Drawing Board */}
+        {/* Drawing Board - the hero: a thick whiteboard frame, not another card */}
         <div className="lg:col-span-4 flex flex-col">
-          <div className="card flex-1 flex flex-col min-h-[500px]">
-            <div className="p-3 border-b border-card-border text-sm text-gray-600 dark:text-gray-400">
-              {isCurrentPlayerDrawer() ? "Your turn to draw" : "Guess what's being drawn"}
-            </div>
+          <div
+            className="mb-2 px-1 text-sm font-bold text-center lg:text-left"
+            style={{ color: isCurrentPlayerDrawer() ? 'var(--marker-blue)' : 'var(--text-secondary)' }}
+          >
+            {turnBanner}
+          </div>
+          <div className="canvas-container flex-1 flex flex-col min-h-[500px] overflow-hidden">
             <div className="flex-1 p-2">
-              <TldrawCanvas 
-                isDrawing={isCurrentPlayerDrawer()} 
+              <TldrawCanvas
+                isDrawing={isCurrentPlayerDrawer()}
                 gameState={gameState}
                 roomId={roomId}
                 playerId={playerId}
               />
             </div>
           </div>
-          
-          {/* Word Hint */}
-          <div className="mt-4 card">
-            <WordHint 
-              word={gameState.currentWord || ""} 
-              reveal={isCurrentPlayerDrawer()} 
+
+          {/* Word Hint - the server progressively reveals letters into
+              currentWord as time passes (see gameStateSanitizer) */}
+          <div className="mt-4">
+            <WordHint
+              word={gameState.currentWord || ""}
+              reveal={isCurrentPlayerDrawer()}
             />
           </div>
         </div>
-        
+
         {/* Sidebar */}
         <div className="flex flex-col gap-4">
-          <PlayerList 
+          <PlayerList
             players={gameState.players.map(p => ({
               id: p.id,
               username: p.name,
@@ -368,7 +382,7 @@ export default function GamePage() {
             }))}
             currentPlayerId={playerId}
           />
-          
+
           <div className="flex-1 min-h-[300px]">
             <ChatBox
               username={playerName}

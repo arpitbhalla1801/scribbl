@@ -53,17 +53,19 @@ export default function CreateGamePage() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-light mb-4 text-gray-900 dark:text-white">Create Game</h1>
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2" aria-hidden="true">🖍️</div>
+          <h1 className="text-3xl mb-1 text-primary">Create a room</h1>
+          <p className="text-secondary text-sm">Set the rules, then invite your friends in.</p>
         </div>
-        
+
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="playerName" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Your Name
+              <label htmlFor="playerName" className="block text-sm font-semibold text-secondary mb-2">
+                Your name
               </label>
               <input
                 id="playerName"
@@ -72,14 +74,14 @@ export default function CreateGamePage() {
                 onChange={(e) => setPlayerName(e.target.value)}
                 required
                 className="w-full"
-                placeholder="Enter your name"
+                placeholder="What should we call you?"
                 maxLength={20}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="rounds" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <label htmlFor="rounds" className="block text-sm font-semibold text-secondary mb-2">
                   Rounds
                 </label>
                 <select
@@ -94,10 +96,10 @@ export default function CreateGamePage() {
                   <option value={5}>5</option>
                 </select>
               </div>
-              
+
               <div>
-                <label htmlFor="timePerRound" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Time (sec)
+                <label htmlFor="timePerRound" className="block text-sm font-semibold text-secondary mb-2">
+                  Time per turn
                 </label>
                 <select
                   id="timePerRound"
@@ -105,37 +107,44 @@ export default function CreateGamePage() {
                   onChange={(e) => setTimePerRound(Number(e.target.value))}
                   className="w-full"
                 >
-                  <option value={30}>30</option>
-                  <option value={60}>60</option>
-                  <option value={90}>90</option>
-                  <option value={120}>120</option>
+                  <option value={30}>30s</option>
+                  <option value={60}>60s</option>
+                  <option value={90}>90s</option>
+                  <option value={120}>120s</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label htmlFor="difficulty" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Difficulty
+              <label className="block text-sm font-semibold text-secondary mb-2">
+                Word difficulty
               </label>
-              <select
-                id="difficulty"
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
-                className="w-full"
-              >
-                <option value="easy">Easy (Short words)</option>
-                <option value="medium">Medium (Normal words)</option>
-                <option value="hard">Hard (Long words)</option>
-              </select>
+              <div className="grid grid-cols-3 gap-2">
+                {(['easy', 'medium', 'hard'] as const).map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setDifficulty(level)}
+                    className="rounded-xl border-2 py-2.5 text-sm font-bold capitalize transition-colors"
+                    style={
+                      difficulty === level
+                        ? { borderColor: 'var(--marker-blue)', background: 'var(--marker-blue)', color: '#fff' }
+                        : { borderColor: 'var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-primary)' }
+                    }
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
             </div>
-            
-            <div className="flex gap-3 pt-4">
+
+            <div className="flex gap-3 pt-2">
               <button
                 type="submit"
                 disabled={isLoading || !playerName.trim()}
                 className="btn-primary flex-1"
               >
-                {isLoading ? "Creating..." : "Start"}
+                {isLoading ? "Creating…" : "Create room"}
               </button>
               <Link
                 href="/"

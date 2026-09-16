@@ -27,33 +27,35 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   return (
     <div className="card">
       <div className="p-3 flex flex-col lg:flex-row justify-between items-center gap-3">
-        <div className="flex flex-col sm:flex-row items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <Link
             href="/"
-            className="px-3 py-1 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-300 dark:border-gray-600 rounded hover:border-red-300 dark:hover:border-red-500 transition-colors"
+            className="px-3 py-1.5 rounded-full font-semibold border-2 transition-colors"
+            style={{ borderColor: 'var(--marker-red)', color: 'var(--marker-red)' }}
           >
             ← Exit
           </Link>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-gray-600 dark:text-gray-400">
-              Room: <span className="font-medium text-gray-900 dark:text-gray-100">{roomId}</span>
+
+          <span
+            className="px-3 py-1.5 rounded-full font-bold tracking-wide border-2"
+            style={{ borderColor: 'var(--ink)', background: 'var(--paper-dim)', fontFamily: 'var(--font-display)' }}
+          >
+            {roomId}
+          </span>
+
+          <span className="text-secondary">
+            Round <span className="font-bold text-primary">{roundNumber}/{totalRounds}</span>
+          </span>
+
+          {currentTurn && totalTurns && (
+            <span className="text-secondary">
+              Turn <span className="font-bold text-primary">{currentTurn}/{totalTurns}</span>
             </span>
-            
-            <span className="text-gray-600 dark:text-gray-400">
-              Round: <span className="font-medium text-gray-900 dark:text-gray-100">{roundNumber}/{totalRounds}</span>
-            </span>
-            
-            {currentTurn && totalTurns && (
-              <span className="text-gray-600 dark:text-gray-400">
-                Turn: <span className="font-medium text-gray-900 dark:text-gray-100">{currentTurn}/{totalTurns}</span>
-              </span>
-            )}
-          </div>
+          )}
         </div>
-        
-        <div className="w-full sm:w-48">
-          <Timer 
+
+        <div className="w-full sm:w-56">
+          <Timer
             timeRemaining={timeRemaining}
             totalTime={totalTime}
             onTimeEnd={onTimeEnd}

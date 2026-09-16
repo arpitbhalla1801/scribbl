@@ -1,81 +1,99 @@
 @import "tailwindcss";
 
 :root {
-  /* Minimalist light theme */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --primary: #000000;
-  --primary-hover: #333333;
-  --secondary: #f5f5f5;
-  --secondary-hover: #e8e8e8;
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --gray-50: #fafafa;
-  --gray-100: #f5f5f5;
-  --gray-200: #e5e5e5;
-  --gray-300: #d4d4d4;
-  --gray-400: #a3a3a3;
-  --gray-500: #737373;
-  --gray-600: #525252;
-  --gray-700: #404040;
-  --gray-800: #262626;
-  --gray-900: #171717;
-  --success: #22c55e;
-  --success-light: #f0fdf4;
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --danger: #ef4444;
-  --danger-light: #fef2f2;
+  /* "Marker on paper" palette - grounded in the act of drawing itself.
+     Named tokens rather than a generic gray scale. */
+  --paper: #fffcf5;
+  --paper-dim: #f7f2e6;
+  --ink: #1b1b2f;
+  --ink-soft: #4a4a63;
+  --ink-faint: #8b8ba3;
+  --line: #e7e0cf;
+
+  --marker-blue: #3e7cff;
+  --marker-blue-dark: #2c5fd6;
+  --marker-green: #22c55e;
+  --marker-green-dark: #189446;
+  --marker-red: #ff4d4d;
+  --marker-red-dark: #e02f2f;
+  --marker-yellow: #ffb800;
+  --marker-yellow-dark: #d99700;
+  --marker-purple: #9b5de5;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --primary: var(--marker-blue);
+  --primary-hover: var(--marker-blue-dark);
+  --secondary: var(--paper-dim);
+  --secondary-hover: #efe8d5;
+  --accent: var(--marker-purple);
+  --success: var(--marker-green);
+  --success-light: #eafbf0;
+  --warning: var(--marker-yellow);
+  --warning-light: #fff7e0;
+  --danger: var(--marker-red);
+  --danger-light: #ffecec;
   --card-bg: #ffffff;
-  --card-border: #f0f0f0;
-  --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
+  --card-border: var(--line);
+  --card-shadow: 0 2px 0 0 var(--line);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-muted: var(--ink-faint);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Minimalist dark theme */
-    --background: #0a0a0a;
-    --foreground: #ffffff;
-    --primary: #ffffff;
-    --primary-hover: #e5e5e5;
-    --secondary: #1a1a1a;
-    --secondary-hover: #262626;
-    --accent: #818cf8;
-    --accent-hover: #6366f1;
-    --gray-50: #1a1a1a;
-    --gray-100: #262626;
-    --gray-200: #404040;
-    --gray-300: #525252;
-    --gray-400: #737373;
-    --gray-500: #a3a3a3;
-    --gray-600: #d4d4d4;
-    --gray-700: #e5e5e5;
-    --gray-800: #f5f5f5;
-    --gray-900: #fafafa;
-    --success: #22c55e;
-    --success-light: #0f1a0f;
-    --warning: #f59e0b;
-    --warning-light: #1a1610;
-    --danger: #ef4444;
-    --danger-light: #1a0f0f;
-    --card-bg: #111111;
-    --card-border: #1f1f1f;
-    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --text-primary: #ffffff;
-    --text-secondary: #a3a3a3;
-    --text-muted: #737373;
+    --paper: #16161f;
+    --paper-dim: #1e1e2a;
+    --ink: #f5f3ea;
+    --ink-soft: #c7c4d6;
+    --ink-faint: #8a879c;
+    --line: #33334a;
+
+    --marker-blue: #6d9dff;
+    --marker-blue-dark: #4c7fe6;
+    --marker-green: #3ddc7a;
+    --marker-red: #ff6b6b;
+    --marker-yellow: #ffc933;
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --primary: var(--marker-blue);
+    --primary-hover: var(--marker-blue-dark);
+    --secondary: var(--paper-dim);
+    --secondary-hover: #272736;
+    --success: var(--marker-green);
+    --success-light: #103a24;
+    --warning: var(--marker-yellow);
+    --warning-light: #3a2e0a;
+    --danger: var(--marker-red);
+    --danger-light: #3a1414;
+    --card-bg: #1e1e2a;
+    --card-border: var(--line);
+    --card-shadow: 0 2px 0 0 var(--line);
+    --text-primary: var(--ink);
+    --text-secondary: var(--ink-soft);
+    --text-muted: var(--ink-faint);
   }
 }
 
 body {
   background: var(--background);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
   min-height: 100vh;
-  line-height: 1.6;
+  line-height: 1.55;
+  background-image:
+    radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-image: radial-gradient(var(--line) 1px, transparent 1px);
+    opacity: 1;
+  }
 }
 
 * {
@@ -83,91 +101,114 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
+  font-family: var(--font-display, ui-sans-serif, system-ui, sans-serif);
+  font-weight: 700;
+  line-height: 1.15;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
-h1 { font-size: 2.25rem; }
-h2 { font-size: 1.875rem; }
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
 h3 { font-size: 1.5rem; }
 h4 { font-size: 1.25rem; }
 h5 { font-size: 1.125rem; }
 h6 { font-size: 1rem; }
 
-/* Minimalist Card Styling */
+/* Sticker card: thick ink border + flat offset shadow instead of a soft
+   drop-shadow, so panels read as drawn/cut-out shapes rather than the
+   generic soft-gray SaaS card. */
 .card {
   background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border: 2px solid var(--card-border);
+  border-radius: 16px;
   box-shadow: var(--card-shadow);
   overflow: hidden;
 }
 
-/* Clean Button Styles */
+/* Buttons */
 .btn-primary {
   background-color: var(--primary);
-  color: var(--background);
+  color: #ffffff;
   padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 150ms ease;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 46px;
+  box-shadow: 0 3px 0 0 var(--primary-hover);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-hover);
-  transform: translateY(-1px);
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 0 var(--primary-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: none;
 }
 
 .btn-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
   transform: none;
 }
 
 .btn-secondary {
-  background-color: var(--secondary);
+  background-color: var(--card-bg);
   color: var(--text-primary);
   padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  border: 1px solid var(--card-border);
-  transition: all 150ms ease;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  border: 2px solid var(--ink);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 46px;
+  box-shadow: 0 3px 0 0 var(--ink);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--secondary-hover);
-  transform: translateY(-1px);
+  background-color: var(--secondary);
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 0 var(--ink);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: none;
 }
 
 .btn-secondary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
   transform: none;
 }
 
-/* Clean Form Inputs */
+/* Form inputs */
 input, select, textarea {
   background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 2px solid var(--card-border);
   color: var(--text-primary);
   padding: 12px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 150ms ease;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: var(--font-body);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
   width: 100%;
 }
 
@@ -177,57 +218,52 @@ input::placeholder, textarea::placeholder {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
-/* Canvas Container */
+/* Canvas frame: the whiteboard the whole game revolves around - thick ink
+   border so it visually reads as the hero, not another card in a grid. */
 .canvas-container {
-  background-color: white;
-  border-radius: 6px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--card-border);
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 3px solid var(--ink);
 }
 
-/* Text Utilities */
-.text-primary {
-  color: var(--text-primary) !important;
+/* Text utilities */
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-success { color: var(--success) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-danger { color: var(--danger) !important; }
+.bg-success-light { background-color: var(--success-light) !important; }
+.bg-warning-light { background-color: var(--warning-light) !important; }
+.bg-danger-light { background-color: var(--danger-light) !important; }
+
+/* Rank badge for the scoreboard - a numbered circle is only used here
+   because rank genuinely is a sequence, not decoration. */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  border: 2px solid var(--ink);
+  background: var(--paper-dim);
+  color: var(--text-primary);
 }
 
-.text-secondary {
-  color: var(--text-secondary) !important;
-}
+.rank-badge.rank-1 { background: var(--marker-yellow); border-color: var(--marker-yellow-dark); color: var(--ink); }
+.rank-badge.rank-2 { background: #d9d9e3; border-color: var(--ink-soft); color: var(--ink); }
+.rank-badge.rank-3 { background: #f0b27a; border-color: #c8793a; color: var(--ink); }
 
-.text-muted {
-  color: var(--text-muted) !important;
-}
-
-/* Status Colors */
-.text-success {
-  color: var(--success) !important;
-}
-
-.text-warning {
-  color: var(--warning) !important;
-}
-
-.text-danger {
-  color: var(--danger) !important;
-}
-
-.bg-success-light {
-  background-color: var(--success-light) !important;
-}
-
-.bg-warning-light {
-  background-color: var(--warning-light) !important;
-}
-
-.bg-danger-light {
-  background-color: var(--danger-light) !important;
-}
-
-/* Responsive Grid Improvements */
+/* Responsive */
 @media (max-width: 1024px) {
   .grid-responsive {
     grid-template-columns: 1fr !important;
@@ -239,61 +275,57 @@ input:focus, select:focus, textarea:focus {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
   }
-  
-  h1 { font-size: 1.875rem; }
+
+  h1 { font-size: 2rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
-  
+
   .btn-primary, .btn-secondary {
     min-height: 3rem;
     font-size: 1rem;
   }
 }
 
-/* Loading Animation */
+/* Motion */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+.animate-spin { animation: spin 1s linear infinite; }
 
-.animate-spin {
-  animation: spin 1s linear infinite;
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.85) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+.animate-pop-in { animation: pop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-/* Focus visible for accessibility */
+@keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.animate-bounce-in { animation: bounce-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
 .focus-visible:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 3px solid var(--marker-blue);
   outline-offset: 2px;
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   :root {
-    --card-border: #000000;
-    --text-secondary: #000000;
+    --card-border: var(--ink);
+    --text-secondary: var(--ink);
     --text-muted: #333333;
-  }
-  
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --card-border: #ffffff;
-      --text-secondary: #ffffff;
-      --text-muted: #cccccc;
-    }
   }
 }
 
-/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
-  .animate-spin {
-    animation: none;
-  }
+  .animate-spin { animation: none; }
 }
 
 /* Tldraw canvas styling */
@@ -308,7 +340,6 @@ input:focus, select:focus, textarea:focus {
   height: 100% !important;
 }
 
-/* Customize tldraw UI for the game */
 .tldraw-container [data-testid="tools.draw"] {
   display: block !important;
 }
@@ -321,7 +352,6 @@ input:focus, select:focus, textarea:focus {
   display: block !important;
 }
 
-/* Hide some UI elements we don't need */
 .tldraw-container [data-testid="main.menu"] {
   display: none !important;
 }

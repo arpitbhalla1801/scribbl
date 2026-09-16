@@ -52,23 +52,28 @@ export default function JoinGamePage() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-light mb-4 text-gray-900 dark:text-white">Join Game</h1>
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2" aria-hidden="true">🚪</div>
+          <h1 className="text-3xl mb-1 text-primary">Join a room</h1>
+          <p className="text-secondary text-sm">Got a room code from a friend? Pop it in below.</p>
         </div>
-        
+
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-3 rounded-md text-sm">
+              <div
+                className="p-3 rounded-xl text-sm font-medium border-2"
+                style={{ background: 'var(--danger-light)', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+              >
                 {error}
               </div>
             )}
-            
+
             <div>
-              <label htmlFor="gameCode" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Game Code
+              <label htmlFor="gameCode" className="block text-sm font-semibold text-secondary mb-2">
+                Room code
               </label>
               <input
                 id="gameCode"
@@ -76,15 +81,16 @@ export default function JoinGamePage() {
                 value={gameCode}
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 required
-                className="w-full uppercase font-mono text-lg text-center"
+                className="w-full uppercase text-2xl text-center tracking-[0.3em]"
+                style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}
                 placeholder="ABC123"
                 maxLength={6}
               />
             </div>
-            
+
             <div>
-              <label htmlFor="playerName" className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Your Name
+              <label htmlFor="playerName" className="block text-sm font-semibold text-secondary mb-2">
+                Your name
               </label>
               <input
                 id="playerName"
@@ -93,18 +99,18 @@ export default function JoinGamePage() {
                 onChange={(e) => setPlayerName(e.target.value)}
                 required
                 className="w-full"
-                placeholder="Enter your name"
+                placeholder="What should we call you?"
                 maxLength={20}
               />
             </div>
-            
-            <div className="flex gap-3 pt-4">
+
+            <div className="flex gap-3 pt-2">
               <button
                 type="submit"
                 disabled={isLoading || !playerName.trim() || !gameCode.trim() || gameCode.length !== 6}
                 className="btn-primary flex-1"
               >
-                {isLoading ? "Joining..." : "Join"}
+                {isLoading ? "Joining…" : "Join room"}
               </button>
               <Link
                 href="/"
@@ -115,12 +121,12 @@ export default function JoinGamePage() {
             </div>
           </form>
         </div>
-        
+
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-500">
-            Need a game?{" "}
-            <Link href="/create" className="text-gray-900 dark:text-white hover:underline">
-              Create one
+          <p className="text-sm text-secondary">
+            Nobody to join yet?{" "}
+            <Link href="/create" className="font-semibold" style={{ color: 'var(--marker-blue)' }}>
+              Start a room
             </Link>
           </p>
         </div>
