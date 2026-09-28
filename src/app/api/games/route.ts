@@ -87,15 +87,12 @@ export async function POST(request: NextRequest) {
       difficulty: settings.difficulty || 'medium'
     };
 
-    // Generate unique room ID
-    const roomId = GameManager.generateRoomId();
-
     // Create the game
-    const gameState = GameManager.createGame(roomId, playerName.trim(), gameSettings);
+    const gameState = await GameManager.createGame(playerName.trim(), gameSettings);
 
     return NextResponse.json({
       success: true,
-      roomId,
+      roomId: gameState.roomId,
       playerId: gameState.players[0].id,
       gameState
     });

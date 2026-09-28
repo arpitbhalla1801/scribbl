@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // Try to reconnect the player
-    const result = GameManager.reconnectPlayer(roomId, playerId);
+    const result = await GameManager.reconnectPlayer(roomId, playerId);
 
     if (!result.success) {
       return NextResponse.json(

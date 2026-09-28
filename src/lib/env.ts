@@ -7,9 +7,6 @@ interface EnvConfig {
   // Application URL (for CORS and redirects)
   NEXT_PUBLIC_APP_URL?: string;
   
-  // Cleanup API token (for internal admin endpoints)
-  CLEANUP_API_TOKEN?: string;
-  
   // Node environment
   NODE_ENV: string;
 }
@@ -20,7 +17,6 @@ interface EnvConfig {
 export function getEnvConfig(): EnvConfig {
   const config: EnvConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    CLEANUP_API_TOKEN: process.env.CLEANUP_API_TOKEN,
     NODE_ENV: process.env.NODE_ENV || 'development',
   };
 
@@ -35,10 +31,6 @@ export function getEnvConfig(): EnvConfig {
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) || // Vercel
         process.env.RAILWAY_PUBLIC_DOMAIN || // Railway
         'http://localhost:3000'; // Fallback
-    }
-
-    if (!config.CLEANUP_API_TOKEN) {
-      console.warn('⚠️  CLEANUP_API_TOKEN is not set. The cleanup endpoint will refuse all requests until it is configured.');
     }
 
     // Validate URL format

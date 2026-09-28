@@ -58,7 +58,7 @@ export async function POST(
     const sanitizedGuess = sanitizeMessage(guess.trim());
 
     // Submit the guess
-  const result = GameManager.submitGuess(roomId, playerId, sanitizedGuess);
+  const result = await GameManager.submitGuess(roomId, playerId, sanitizedGuess);
 
     if (!result.success) {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId, playerId);
+    const game = await GameManager.getGame(roomId, playerId);
     const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
     return NextResponse.json({

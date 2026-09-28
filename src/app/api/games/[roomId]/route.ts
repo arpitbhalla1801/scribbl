@@ -40,7 +40,7 @@ export async function GET(
       );
     }
 
-    const game = GameManager.getGame(roomId, playerId || undefined);
+    const game = await GameManager.getGame(roomId, playerId || undefined);
 
     if (!game) {
       return NextResponse.json(
@@ -112,7 +112,7 @@ export async function DELETE(
     // leaveGame (not removePlayer) - it also ends the current turn if the
     // leaving player was mid-draw, so the round doesn't hang on a drawer
     // who no longer exists in game.players.
-    const result = GameManager.leaveGame(roomId, playerId);
+    const result = await GameManager.leaveGame(roomId, playerId);
 
     if (!result.success) {
       return NextResponse.json(

@@ -56,7 +56,7 @@ export async function POST(
     }
 
     // Try to join the game
-    const result = GameManager.joinGame(roomId, playerName.trim());
+    const result = await GameManager.joinGame(roomId, playerName.trim());
 
     if (!result.success) {
       return NextResponse.json(
@@ -65,7 +65,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId, result.player!.id);
+    const game = await GameManager.getGame(roomId, result.player!.id);
 
     return NextResponse.json({
       success: true,
