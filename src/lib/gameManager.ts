@@ -24,6 +24,10 @@ const HEARTBEAT_TIMEOUT_MS = 5000;
 const WORD_SELECTION_MS = 10000;
 const ROUND_END_REVEAL_MS = 3000;
 
+// A one-edit-away guess still counts, but is worth less than nailing the
+// exact word.
+const TYPO_SCORE_MULTIPLIER = 0.8;
+
 // Room codes are user-typed (6 chars, [A-Z0-9]), so they stay short - but
 // drawn via a CSPRNG rather than Math.random(), which is not suitable for
 // anything security-relevant.
@@ -277,8 +281,12 @@ export class GameManager {
       }
 
       // Accept guesses that are a single edit away from the word (typos like
-      // "firetrucck"), not just exact matches.
-      const isCorrect = !!game.currentWord && isOneEditAway(guess.toLowerCase().trim(), game.currentWord.toLowerCase().trim());
+      // "firetrucck"), not just exact matches - but worth fewer points (see
+      // TYPO_SCORE_MULTIPLIER below).
+      const normalizedGuess = guess.toLowerCase().trim();
+      const normalizedWord = game.currentWord?.toLowerCase().trim();
+      const isExactMatch = !!normalizedWord && normalizedGuess === normalizedWord;
+      const isCorrect = isExactMatch || (!!normalizedWord && isOneEditAway(normalizedGuess, normalizedWord));
 
       // Filter profanity from the guess text that gets displayed in chat when
       // incorrect (correct guesses are never shown verbatim - see
@@ -301,11 +309,13 @@ export class GameManager {
         const elapsed = Date.now() - (game.turnStartTime || Date.now());
         const timeRemaining = Math.max(0, game.settings.timePerRound - Math.floor(elapsed / 1000));
 
-        // Points: base 100 + up to 100 bonus for speed (linear)
+        // Points: base 100 + up to 100 bonus for speed (linear), discounted
+        // for a typo'd (one-edit-away) guess so it's always worth less than
+        // getting the word exactly right.
         const maxBonus = 100;
         const totalTime = game.settings.timePerRound;
         const bonus = Math.round((timeRemaining / totalTime) * maxBonus);
-        const points = 100 + bonus;
+        const points = isExactMatch ? 100 + bonus : Math.round((100 + bonus) * TYPO_SCORE_MULTIPLIER);
 
         player.score += points;
 

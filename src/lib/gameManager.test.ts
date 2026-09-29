@@ -148,6 +148,25 @@ test('submitGuess accepts a guess that is a single typo away from the word', asy
   assert.equal(typo.isCorrect, true);
 });
 
+test('submitGuess awards fewer points for a typo than for the exact word', async () => {
+  async function scoreFor(guessFn: (word: string) => string): Promise<number> {
+    const { roomId, players } = await makeGame(2);
+    await GameManager.startGame(roomId, players[0].id);
+    const state = await GameManager.getGame(roomId);
+    const drawerId = state!.currentDrawer!;
+    const guesserId = players.find(p => p.id !== drawerId)!.id;
+    await GameManager.selectWord(roomId, drawerId, 0);
+    const word = (await GameManager.getGame(roomId))!.currentWord!;
+    await GameManager.submitGuess(roomId, guesserId, guessFn(word));
+    const scored = await GameManager.getGame(roomId, guesserId);
+    return scored!.players.find(p => p.id === guesserId)!.score;
+  }
+
+  const exactScore = await scoreFor(word => word);
+  const typoScore = await scoreFor(word => word + 'x');
+  assert.ok(typoScore < exactScore, `expected typo score ${typoScore} < exact score ${exactScore}`);
+});
+
 test('leaveGame reassigns host and deletes empty rooms', async () => {
   const { roomId, players } = await makeGame(2);
 
