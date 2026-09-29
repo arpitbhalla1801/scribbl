@@ -315,7 +315,8 @@ export class GameManager {
         const maxBonus = 100;
         const totalTime = game.settings.timePerRound;
         const bonus = Math.round((timeRemaining / totalTime) * maxBonus);
-        const points = isExactMatch ? 100 + bonus : Math.round((100 + bonus) * TYPO_SCORE_MULTIPLIER);
+        const fullPoints = 100 + bonus;
+        const points = isExactMatch ? fullPoints : Math.round(fullPoints * TYPO_SCORE_MULTIPLIER);
 
         player.score += points;
 
@@ -325,10 +326,12 @@ export class GameManager {
         }
         game.roundScores[playerId] += points;
 
-        // Award points to drawer too (half of guesser's points)
+        // Award points to drawer too (half of the full points, regardless of
+        // the guesser's typo discount - the drawer drew it correctly either
+        // way, so their score shouldn't be docked for the guesser's typo).
         const drawer = game.players.find(p => p.id === game.currentDrawer);
         if (drawer) {
-          const drawerPoints = Math.floor(points * 0.5);
+          const drawerPoints = Math.floor(fullPoints * 0.5);
           drawer.score += drawerPoints;
 
           if (!game.roundScores[drawer.id]) {
