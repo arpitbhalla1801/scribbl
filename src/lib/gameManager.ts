@@ -30,6 +30,31 @@ const ROOM_ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 const NOT_FOUND = { success: false, error: 'Game not found' };
 
+// True if `a` can become `b` with at most one insertion, deletion, or
+// substitution. O(n) rather than full Levenshtein DP since we only ever need
+// to know "is it within 1", not the exact distance.
+export function isOneEditAway(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  let i = 0;
+  let j = 0;
+  let edited = false;
+  while (i < shorter.length && j < longer.length) {
+    if (shorter[i] === longer[j]) {
+      i++;
+      j++;
+      continue;
+    }
+    if (edited) return false;
+    edited = true;
+    if (shorter.length === longer.length) i++; // substitution
+    j++; // insertion/deletion in the longer string
+  }
+  return true;
+}
+
 export class GameManager {
   // Runs a state change atomically, then re-arms the room's timer from the
   // saved state. fn is re-run on write conflicts, so it must only touch `g`.
@@ -250,7 +275,9 @@ export class GameManager {
         return { success: false, error: 'Already guessed correctly' };
       }
 
-      const isCorrect = guess.toLowerCase().trim() === game.currentWord?.toLowerCase().trim();
+      // Accept guesses that are a single edit away from the word (typos like
+      // "firetrucck"), not just exact matches.
+      const isCorrect = !!game.currentWord && isOneEditAway(guess.toLowerCase().trim(), game.currentWord.toLowerCase().trim());
 
       // Filter profanity from the guess text that gets displayed in chat when
       // incorrect (correct guesses are never shown verbatim - see

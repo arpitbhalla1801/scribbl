@@ -1,9 +1,20 @@
 // Run: node --test --test-force-exit src/lib/gameManager.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GameManager } from './gameManager.ts';
+import { GameManager, isOneEditAway } from './gameManager.ts';
 
 const settings = { rounds: 2, timePerRound: 60 } as const;
+
+test('isOneEditAway accepts exact matches, single typos, and rejects the rest', () => {
+  assert.equal(isOneEditAway('firetruck', 'firetruck'), true);
+  assert.equal(isOneEditAway('firetrucck', 'firetruck'), true); // insertion
+  assert.equal(isOneEditAway('firetruc', 'firetruck'), true); // deletion
+  assert.equal(isOneEditAway('firetrusk', 'firetruck'), true); // substitution
+  assert.equal(isOneEditAway('firetrck', 'firetruck'), true); // deletion elsewhere
+  assert.equal(isOneEditAway('cat', 'dog'), false);
+  assert.equal(isOneEditAway('firetrck', 'fireman'), false);
+  assert.equal(isOneEditAway('ab', 'ba'), false); // transposition is 2 edits
+});
 
 async function makeGame(playerCount = 2) {
   const game = await GameManager.createGame('Host', settings);
@@ -120,6 +131,21 @@ test('submitGuess scores the guesser and drawer, and blocks the drawer from gues
   const again = await GameManager.submitGuess(roomId, guesserId, word);
   assert.equal(again.success, false);
   assert.match(again.error!, /game not in progress/i);
+});
+
+test('submitGuess accepts a guess that is a single typo away from the word', async () => {
+  const { roomId, players } = await makeGame(2);
+  await GameManager.startGame(roomId, players[0].id);
+  let state = await GameManager.getGame(roomId);
+  const drawerId = state!.currentDrawer!;
+  const guesserId = players.find(p => p.id !== drawerId)!.id;
+  await GameManager.selectWord(roomId, drawerId, 0);
+  state = await GameManager.getGame(roomId);
+  const word = state!.currentWord!;
+
+  const typo = await GameManager.submitGuess(roomId, guesserId, word + 'x');
+  assert.equal(typo.success, true);
+  assert.equal(typo.isCorrect, true);
 });
 
 test('leaveGame reassigns host and deletes empty rooms', async () => {
