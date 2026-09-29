@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
+import { setSessionCookie, verifySession } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -52,6 +53,13 @@ export async function POST(
       );
     }
 
+    if (!verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Select the word
     const result = await GameManager.selectWord(roomId, playerId, wordIndex);
 
@@ -62,10 +70,12 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       gameState: result.gameState
     });
+    setSessionCookie(response, roomId, playerId);
+    return response;
 
   } catch (error) {
     console.error('Error selecting word:', error);

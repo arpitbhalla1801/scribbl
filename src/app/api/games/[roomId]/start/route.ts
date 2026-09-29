@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
+import { setSessionCookie, verifySession } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -46,6 +47,13 @@ export async function POST(
       );
     }
 
+    if (!verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Try to start the game
     const result = await GameManager.startGame(roomId, playerId);
 
@@ -59,10 +67,12 @@ export async function POST(
     const game = await GameManager.getGame(roomId, playerId);
     const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       gameState: sanitizedGame
     });
+    setSessionCookie(response, roomId, playerId);
+    return response;
 
   } catch (error) {
     console.error('Error starting game:', error);

@@ -4,6 +4,7 @@ import { GuessRequest } from '@/lib/types';
 import { guessRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { sanitizeMessage, validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
+import { setSessionCookie, verifySession } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -54,6 +55,13 @@ export async function POST(
       );
     }
 
+    if (!verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Sanitize the guess
     const sanitizedGuess = sanitizeMessage(guess.trim());
 
@@ -70,11 +78,13 @@ export async function POST(
     const game = await GameManager.getGame(roomId, playerId);
     const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       isCorrect: result.isCorrect,
       gameState: sanitizedGame
     });
+    setSessionCookie(response, roomId, playerId);
+    return response;
 
   } catch (error) {
     console.error('Error submitting guess:', error);
