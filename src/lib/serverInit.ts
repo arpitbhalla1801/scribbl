@@ -1,5 +1,4 @@
 // Server initialization - runs once when the server starts
-import { startCleanupService } from './cleanupService';
 import { validateEnvironment } from './env';
 
 let initialized = false;
@@ -13,10 +12,7 @@ export function initializeServer() {
   
   // Validate environment variables
   validateEnvironment();
-  
-  // Start the cleanup service for inactive games
-  startCleanupService();
-  
+
   initialized = true;
 }
 

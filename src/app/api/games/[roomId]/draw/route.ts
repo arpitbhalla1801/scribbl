@@ -67,7 +67,7 @@ export async function POST(
     }
 
     // Update the drawing
-    const result = GameManager.updateDrawing(roomId, body);
+    const result = await GameManager.updateDrawing(roomId, body);
 
     if (!result.success) {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId, body.playerId);
+    const game = await GameManager.getGame(roomId, body.playerId);
 
     return NextResponse.json({
       success: true,

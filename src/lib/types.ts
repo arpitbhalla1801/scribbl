@@ -36,6 +36,7 @@ export interface GameState {
   currentDrawer?: string;
   timeRemaining: number;
   turnStartTime?: number; // Server timestamp when current turn started
+  roundEndDeadline?: number; // Timestamp when the round-end reveal moves on
   tldrawSnapshot?: TldrawSnapshot;
   guesses: Array<{
     playerId: string;

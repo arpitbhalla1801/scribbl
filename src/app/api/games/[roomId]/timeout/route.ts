@@ -46,7 +46,7 @@ export async function POST(
     }
 
     // Handle timeout
-    const result = GameManager.handleTimeOut(roomId);
+    const result = await GameManager.handleTimeOut(roomId);
 
     if (!result.success) {
       return NextResponse.json(

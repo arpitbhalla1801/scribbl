@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // Try to start the game
-    const result = GameManager.startGame(roomId, playerId);
+    const result = await GameManager.startGame(roomId, playerId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function POST(
       );
     }
 
-    const game = GameManager.getGame(roomId, playerId);
+    const game = await GameManager.getGame(roomId, playerId);
     const sanitizedGame = game ? sanitizeGameStateForPlayer(game, playerId) : game;
 
     return NextResponse.json({

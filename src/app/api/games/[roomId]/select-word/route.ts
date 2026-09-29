@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // Select the word
-    const result = GameManager.selectWord(roomId, playerId, wordIndex);
+    const result = await GameManager.selectWord(roomId, playerId, wordIndex);
 
     if (!result.success) {
       return NextResponse.json(
