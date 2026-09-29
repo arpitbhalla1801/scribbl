@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor, DefaultColorStyle, DefaultSizeStyle } from 'tldraw';
+import { Tldraw, TLComponents, TLUiOverrides, Editor, track, useEditor, DefaultColorStyle, DefaultSizeStyle, inlineBase64AssetStore } from 'tldraw';
+import { useSync } from '@tldraw/sync';
 import { GameState } from '@/lib/types';
-import { TldrawSyncService } from '@/lib/tldrawSyncService';
 
 interface TldrawCanvasProps {
   isDrawing: boolean;
@@ -264,58 +264,35 @@ const DrawingControls = ({ editor, isDrawing }: { editor: Editor | null; isDrawi
   );
 };
 
-// Custom component to track editor changes and sync
-const DrawingTracker = track(({ 
-  syncService, 
-  isDrawing, 
-  gameState,
-  onEditorReady 
-}: { 
-  syncService: TldrawSyncService;
+// Clears the shared canvas once per turn. Only the drawer has write access
+// to the synced store (enforced server-side in server.js), so this is the
+// one client that's actually allowed to wipe it - everyone else just sees
+// the deletion arrive over the sync connection.
+const DrawingTracker = track(({
+  isDrawing,
+  turnKey,
+  onEditorReady,
+}: {
   isDrawing: boolean;
-  gameState?: GameState;
+  turnKey: number;
   onEditorReady?: (editor: Editor) => void;
 }) => {
   const editor = useEditor();
+  const clearedForTurn = useRef<number | null>(null);
 
   useEffect(() => {
     if (!editor) return;
-    
-    // Notify parent about editor
     onEditorReady?.(editor);
+  }, [editor, onEditorReady]);
 
-    // Set up sync service with editor
-    syncService.setEditor(editor);
-    syncService.setDrawingPermission(isDrawing);
-
-    // Listen to changes in the store when drawing
-    if (isDrawing) {
-      const handleChange = () => {
-        syncService.markForSync();
-      };
-
-      const unsubscribe = editor.store.listen(handleChange, { source: 'user', scope: 'all' });
-      return () => unsubscribe();
-    }
-  }, [editor, isDrawing, syncService, onEditorReady]);
-
-  // Apply snapshots from game state when not drawing
   useEffect(() => {
-    if (!isDrawing && gameState) {
-      syncService.applySnapshot(gameState);
+    if (!editor || !isDrawing || clearedForTurn.current === turnKey) return;
+    clearedForTurn.current = turnKey;
+    const allShapeIds = editor.getCurrentPageShapeIds();
+    if (allShapeIds.size > 0) {
+      editor.deleteShapes([...allShapeIds]);
     }
-  }, [gameState, isDrawing, syncService]);
-
-  // Clear canvas when starting a new turn (no tldraw snapshot)
-  useEffect(() => {
-    if (!gameState?.tldrawSnapshot && editor) {
-      // Clear the canvas if there's no snapshot (new turn)
-      const allShapeIds = editor.getCurrentPageShapeIds();
-      if (allShapeIds.size > 0) {
-        editor.deleteShapes([...allShapeIds]);
-      }
-    }
-  }, [gameState?.tldrawSnapshot, editor]);
+  }, [editor, isDrawing, turnKey]);
 
   return null;
 });
@@ -327,16 +304,17 @@ export const TldrawCanvas: React.FC<TldrawCanvasProps> = ({
   playerId,
 }) => {
   const editorRef = useRef<Editor | null>(null);
-  const syncServiceRef = useRef<TldrawSyncService | null>(null);
 
-  // Initialize sync service
-  useEffect(() => {
-    syncServiceRef.current = new TldrawSyncService(roomId, playerId);
-    
-    return () => {
-      syncServiceRef.current?.cleanup();
-    };
-  }, [roomId, playerId]);
+  // Drawing rights are decided server-side, from the game state, at the
+  // moment the socket connects (see the /api/connect upgrade handler in
+  // server.js) - not by anything the client sends. So when isDrawing flips
+  // (new turn, new drawer), the store below is remounted via `key` to force
+  // a fresh connection and get re-checked permissions.
+  const proto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const uri = typeof window !== 'undefined'
+    ? `${proto}://${window.location.host}/api/connect/${roomId}?playerId=${playerId}`
+    : '';
+  const store = useSync({ uri, assets: inlineBase64AssetStore });
 
   const handleMount = useCallback((editor: Editor) => {
     editorRef.current = editor;
@@ -378,22 +356,18 @@ export const TldrawCanvas: React.FC<TldrawCanvasProps> = ({
     }
   }, [isDrawing]);
 
-  if (!syncServiceRef.current) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="tldraw-container w-full h-full relative">
       <Tldraw
+        store={store}
         onMount={handleMount}
         components={components}
         overrides={uiOverrides}
         autoFocus={isDrawing}
       >
-        <DrawingTracker 
-          syncService={syncServiceRef.current}
+        <DrawingTracker
           isDrawing={isDrawing}
-          gameState={gameState}
+          turnKey={gameState?.currentTurn ?? 0}
         />
       </Tldraw>
       <DrawingControls editor={editorRef.current} isDrawing={isDrawing} />

@@ -1,4 +1,4 @@
-import { GameState, CreateGameRequest, DrawingUpdate } from './types';
+import { GameState, CreateGameRequest } from './types';
 
 export class GameAPI {
   static async createGame(request: CreateGameRequest): Promise<{
@@ -113,30 +113,6 @@ export class GameAPI {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ playerId, guess }),
-      });
-
-      const data = await response.json();
-      return data;
-    } catch {
-      return {
-        success: false,
-        error: 'Network error',
-      };
-    }
-  }
-
-  static async updateDrawing(roomId: string, update: DrawingUpdate): Promise<{
-    success: boolean;
-    gameState?: GameState;
-    error?: string;
-  }> {
-    try {
-      const response = await fetch(`/api/games/${roomId}/draw`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(update),
       });
 
       const data = await response.json();

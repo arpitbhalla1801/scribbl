@@ -353,6 +353,10 @@ export default function GamePage() {
           <div className="canvas-container flex-1 flex flex-col min-h-[500px] overflow-hidden">
             <div className="flex-1 p-2">
               <TldrawCanvas
+                // Force a fresh sync connection whenever draw rights change -
+                // the server decides isReadonly at connect time, so this is
+                // what makes a new drawer actually gain write access.
+                key={isCurrentPlayerDrawer() ? 'drawing' : 'viewing'}
                 isDrawing={isCurrentPlayerDrawer()}
                 gameState={gameState}
                 roomId={roomId}

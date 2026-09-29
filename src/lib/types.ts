@@ -1,5 +1,3 @@
-import { TLStoreSnapshot } from 'tldraw';
-
 export interface Player {
   id: string;
   name: string;
@@ -13,13 +11,6 @@ export interface GameSettings {
   rounds: number;
   timePerRound: number;
   difficulty?: 'easy' | 'medium' | 'hard';
-}
-
-// Tldraw snapshot data
-export interface TldrawSnapshot {
-  snapshot: TLStoreSnapshot; // TLStoreSnapshot from tldraw
-  lastUpdatedBy: string;
-  timestamp: number;
 }
 
 export interface GameState {
@@ -37,7 +28,6 @@ export interface GameState {
   timeRemaining: number;
   turnStartTime?: number; // Server timestamp when current turn started
   roundEndDeadline?: number; // Timestamp when the round-end reveal moves on
-  tldrawSnapshot?: TldrawSnapshot;
   guesses: Array<{
     playerId: string;
     playerName: string;
@@ -64,12 +54,6 @@ export interface JoinGameRequest {
 export interface GuessRequest {
   playerId: string;
   guess: string;
-}
-
-export interface DrawingUpdate {
-  playerId: string;
-  type: 'tldraw_snapshot';
-  tldrawSnapshot: TLStoreSnapshot;
 }
 
 export interface ChatMessage {
