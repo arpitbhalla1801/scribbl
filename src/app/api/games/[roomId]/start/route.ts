@@ -11,7 +11,7 @@ export async function POST(
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimitResult = apiRateLimiter(clientId);
+    const rateLimitResult = await apiRateLimiter(clientId);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
