@@ -15,39 +15,42 @@ function fakeRequest(cookieHeader: Record<string, string>): NextRequest {
   } as unknown as NextRequest;
 }
 
-function issuedCookie(roomId: string, playerId: string): string {
+function issuedCookie(roomId: string, playerId: string): { name: string; value: string } {
   const store = new Map<string, string>();
   const response = {
     cookies: { set: (name: string, value: string) => void store.set(name, value) },
   } as unknown as NextResponse;
   setSessionCookie(response, roomId, playerId);
-  return store.get(`sess_${roomId}`)!;
+  const [[name, value]] = store;
+  return { name, value };
 }
 
 test('a session issued for a room+player verifies for that pair', () => {
-  const cookie = issuedCookie('ROOM01', 'player-a');
-  assert.equal(verifySession(fakeRequest({ sess_ROOM01: cookie }), 'ROOM01', 'player-a'), true);
+  const { name, value } = issuedCookie('ROOM01', 'player-a');
+  assert.equal(verifySession(fakeRequest({ [name]: value }), 'ROOM01', 'player-a'), true);
 });
 
 test('rejects when no cookie is sent', () => {
   assert.equal(verifySession(fakeRequest({}), 'ROOM01', 'player-a'), false);
 });
 
-test('rejects a playerId that does not match the cookie', () => {
-  const cookie = issuedCookie('ROOM01', 'player-a');
-  assert.equal(verifySession(fakeRequest({ sess_ROOM01: cookie }), 'ROOM01', 'player-b'), false);
+test('two players in the same room get separate cookies that do not collide', () => {
+  const a = issuedCookie('ROOM01', 'player-a');
+  const b = issuedCookie('ROOM01', 'player-b');
+  assert.notEqual(a.name, b.name);
+
+  const request = fakeRequest({ [a.name]: a.value, [b.name]: b.value });
+  assert.equal(verifySession(request, 'ROOM01', 'player-a'), true);
+  assert.equal(verifySession(request, 'ROOM01', 'player-b'), true);
 });
 
 test('rejects a cookie replayed against a different room', () => {
-  const cookie = issuedCookie('ROOM01', 'player-a');
-  assert.equal(verifySession(fakeRequest({ sess_ROOM02: cookie }), 'ROOM02', 'player-a'), false);
+  const { value } = issuedCookie('ROOM01', 'player-a');
+  // simulate the value landing under a different room's cookie name
+  assert.equal(verifySession(fakeRequest({ sess_ROOM02_player_a: value }), 'ROOM02', 'player-a'), false);
 });
 
 test('rejects a tampered signature', () => {
-  const cookie = issuedCookie('ROOM01', 'player-a');
-  const [id] = cookie.split('.');
-  assert.equal(
-    verifySession(fakeRequest({ sess_ROOM01: `${id}.${'0'.repeat(64)}` }), 'ROOM01', 'player-a'),
-    false
-  );
+  const { name } = issuedCookie('ROOM01', 'player-a');
+  assert.equal(verifySession(fakeRequest({ [name]: '0'.repeat(64) }), 'ROOM01', 'player-a'), false);
 });

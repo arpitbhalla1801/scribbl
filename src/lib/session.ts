@@ -20,8 +20,12 @@ const SESSION_SECRET =
 
 const COOKIE_MAX_AGE = 3 * 60 * 60; // matches room TTL in store.ts
 
-function cookieName(roomId: string): string {
-  return `sess_${roomId}`;
+// Named per room AND player - two players in the same room sharing a
+// browser (e.g. two tabs for local testing) would otherwise get the same
+// cookie name and the second join's Set-Cookie would silently clobber the
+// first player's session.
+function cookieName(roomId: string, playerId: string): string {
+  return `sess_${roomId}_${playerId}`;
 }
 
 function sign(roomId: string, playerId: string): string {
@@ -29,7 +33,7 @@ function sign(roomId: string, playerId: string): string {
 }
 
 export function setSessionCookie(response: NextResponse, roomId: string, playerId: string): void {
-  response.cookies.set(cookieName(roomId), `${playerId}.${sign(roomId, playerId)}`, {
+  response.cookies.set(cookieName(roomId, playerId), sign(roomId, playerId), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -39,13 +43,8 @@ export function setSessionCookie(response: NextResponse, roomId: string, playerI
 }
 
 export function verifySession(request: NextRequest, roomId: string, playerId: string): boolean {
-  const cookie = request.cookies.get(cookieName(roomId))?.value;
-  if (!cookie) return false;
-
-  const dot = cookie.indexOf('.');
-  if (dot === -1) return false;
-  const [cookiePlayerId, signature] = [cookie.slice(0, dot), cookie.slice(dot + 1)];
-  if (cookiePlayerId !== playerId) return false;
+  const signature = request.cookies.get(cookieName(roomId, playerId))?.value;
+  if (!signature) return false;
 
   const expected = sign(roomId, playerId);
   const a = Buffer.from(signature, 'hex');
