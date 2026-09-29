@@ -1,5 +1,5 @@
 // Import the curated drawable words array
-import { drawableWords } from '../words/drawable_words';
+import { drawableWords } from '../words/drawable_words.ts';
 
 interface WordDifficulty {
   easy: string[];
