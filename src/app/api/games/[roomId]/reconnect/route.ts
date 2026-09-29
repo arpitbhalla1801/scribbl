@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
+import { setSessionCookie, verifySession } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -46,6 +47,16 @@ export async function POST(
       );
     }
 
+    // playerId alone isn't proof of identity - it's visible in the URL and
+    // localStorage, so a stranger who obtains it could otherwise reconnect
+    // as that player. The session cookie set on create/join has to match too.
+    if (!verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Try to reconnect the player
     const result = await GameManager.reconnectPlayer(roomId, playerId);
 
@@ -60,10 +71,12 @@ export async function POST(
       ? sanitizeGameStateForPlayer(result.gameState, playerId)
       : result.gameState;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       gameState: sanitizedGame
     });
+    setSessionCookie(response, roomId, playerId); // refresh expiry
+    return response;
 
   } catch (error) {
     console.error('Error reconnecting player:', error);

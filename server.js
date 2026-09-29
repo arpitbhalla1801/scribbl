@@ -81,9 +81,14 @@ app.prepare().then(() => {
     // Ask the app's own (rate-limited, validated) game endpoint who the
     // current drawer is, rather than trusting anything the socket claims -
     // draw permission comes from the game state, not from the client.
+    // Forward the browser's cookies so the game endpoint can check the
+    // session tied to playerId - without this, anyone could open a socket
+    // with someone else's playerId in the URL and get their draw permission.
     let isReadonly = true;
     try {
-      const gameRes = await fetch(`http://${hostname}:${port}/api/games/${roomId}?playerId=${playerId}`);
+      const gameRes = await fetch(`http://${hostname}:${port}/api/games/${roomId}?playerId=${playerId}`, {
+        headers: { cookie: req.headers.cookie || '' },
+      });
       const data = await gameRes.json();
       isReadonly = data?.gameState?.currentDrawer !== playerId;
     } catch (err) {

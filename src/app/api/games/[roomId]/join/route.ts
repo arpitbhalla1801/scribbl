@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { JoinGameRequest } from '@/lib/types';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername, validateRoomId } from '@/lib/validation';
+import { setSessionCookie } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -67,11 +68,13 @@ export async function POST(
 
     const game = await GameManager.getGame(roomId, result.player!.id);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       playerId: result.player!.id,
       gameState: game
     });
+    setSessionCookie(response, roomId, result.player!.id);
+    return response;
 
   } catch (error) {
     console.error('Error joining game:', error);

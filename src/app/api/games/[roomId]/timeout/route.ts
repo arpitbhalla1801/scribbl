@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
+import { verifySession } from '@/lib/session';
 
 export async function POST(
   request: NextRequest,
@@ -42,6 +43,13 @@ export async function POST(
       const body = await request.json();
       playerId = body?.playerId;
     } catch {
+      playerId = undefined;
+    }
+
+    // playerId here only controls response sanitization (no drawer-only
+    // action to gate) - if it's given but doesn't match the session, drop
+    // it rather than use it to unmask the word.
+    if (playerId && !verifySession(request, roomId, playerId)) {
       playerId = undefined;
     }
 

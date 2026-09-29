@@ -4,6 +4,7 @@ import { CreateGameRequest } from '@/lib/types';
 import { createGameRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername } from '@/lib/validation';
 import { initializeServer } from '@/lib/serverInit';
+import { setSessionCookie } from '@/lib/session';
 
 // Initialize server services on first API call
 initializeServer();
@@ -90,12 +91,14 @@ export async function POST(request: NextRequest) {
     // Create the game
     const gameState = await GameManager.createGame(playerName.trim(), gameSettings);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       roomId: gameState.roomId,
       playerId: gameState.players[0].id,
       gameState
     });
+    setSessionCookie(response, gameState.roomId, gameState.players[0].id);
+    return response;
 
   } catch (error) {
     console.error('Error creating game:', error);

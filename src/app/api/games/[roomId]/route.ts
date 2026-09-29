@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
+import { setSessionCookie, verifySession } from '@/lib/session';
 
 export async function GET(
   request: NextRequest,
@@ -40,6 +41,16 @@ export async function GET(
       );
     }
 
+    // A spoofed playerId here would let someone read the word meant for the
+    // drawer, or fake another player's presence heartbeat - so it needs the
+    // same session check as the write endpoints.
+    if (playerId && !verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const game = await GameManager.getGame(roomId, playerId || undefined);
 
     if (!game) {
@@ -50,14 +61,16 @@ export async function GET(
     }
 
     // Sanitize game state to hide word from non-drawing players
-    const sanitizedGame = playerId 
+    const sanitizedGame = playerId
       ? sanitizeGameStateForPlayer(game, playerId)
       : game;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       gameState: sanitizedGame
     });
+    if (playerId) setSessionCookie(response, roomId, playerId);
+    return response;
 
   } catch (error) {
     console.error('Error getting game:', error);
@@ -106,6 +119,13 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Player ID is required' },
         { status: 400 }
+      );
+    }
+
+    if (!verifySession(request, roomId, playerId)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
