@@ -5,6 +5,7 @@ import { createGameRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername } from '@/lib/validation';
 import { initializeServer } from '@/lib/serverInit';
 import { setSessionCookie } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 // Initialize server services on first API call
 initializeServer();
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Error creating game:', error);
+    logger.error('Error creating game', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

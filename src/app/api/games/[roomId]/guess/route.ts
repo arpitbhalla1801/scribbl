@@ -5,6 +5,7 @@ import { guessRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { sanitizeMessage, validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 import { setSessionCookie, verifySession } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -87,7 +88,7 @@ export async function POST(
     return response;
 
   } catch (error) {
-    console.error('Error submitting guess:', error);
+    logger.error('Error submitting guess', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

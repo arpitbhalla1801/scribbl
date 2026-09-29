@@ -3,6 +3,7 @@ import type { GameState, Player, GameSettings } from './types';
 import { getRandomWords } from './words.ts';
 import { filterProfanity } from './validation.ts';
 import { createStore, type GameStore } from './store.ts';
+import { logger } from './logger.ts';
 
 declare global {
   var gameStore: GameStore | undefined;
@@ -468,7 +469,7 @@ export class GameManager {
       this.run(game.roomId, (g) => {
         this.advance(g);
         return { success: true };
-      }).catch((err) => console.error(`[Timer] room ${game.roomId}:`, err));
+      }).catch((err) => logger.error('Timer failed', { roomId: game.roomId, error: err }));
     }, Math.max(0, at - Date.now()) + 50);
     timers.set(game.roomId, timer);
   }

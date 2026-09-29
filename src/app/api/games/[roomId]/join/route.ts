@@ -4,6 +4,7 @@ import { JoinGameRequest } from '@/lib/types';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername, validateRoomId } from '@/lib/validation';
 import { setSessionCookie } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -77,7 +78,7 @@ export async function POST(
     return response;
 
   } catch (error) {
-    console.error('Error joining game:', error);
+    logger.error('Error joining game', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
