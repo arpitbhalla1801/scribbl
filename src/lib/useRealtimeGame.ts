@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState, ChatMessage, DrawingUpdate } from './types';
+import { GameState, ChatMessage } from './types';
 import { GameAPI } from './gameAPI';
 
 interface UseRealtimeGameProps {
@@ -188,19 +188,6 @@ export function useRealtimeGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, playerId]); // Only re-run when roomId or playerId changes
 
-  // Actions
-  const sendDrawingUpdate = async (update: DrawingUpdate) => {
-    try {
-      const result = await GameAPI.updateDrawing(roomId, update);
-      if (result.success && result.gameState) {
-        setGameState(result.gameState);
-        onGameStateUpdate?.(result.gameState);
-      }
-    } catch (error) {
-      console.error('Error sending drawing update:', error);
-    }
-  };
-
   // Accepts optional timeLeft for time-based scoring
   const submitGuess = async (guess: string) => {
     try {
@@ -285,7 +272,6 @@ export function useRealtimeGame({
     isConnected,
     gameState,
     messages,
-    sendDrawingUpdate,
     submitGuess,
     startGame,
     sendChatMessage,

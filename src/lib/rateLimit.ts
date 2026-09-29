@@ -64,11 +64,6 @@ export const apiRateLimiter = rateLimit({
   maxRequests: 120, // 120 requests per minute (allows polling every 0.5 seconds with buffer)
 });
 
-export const drawRateLimiter = rateLimit({
-  windowMs: 10 * 1000, // 10 seconds  
-  maxRequests: 200, // 200 draw updates per 10 seconds (very fast drawing)
-});
-
 export const guessRateLimiter = rateLimit({
   windowMs: 1000, // 1 second
   maxRequests: 5, // 5 guesses per second

@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from 'crypto';
-import { GameState, Player, GameSettings, DrawingUpdate } from './types';
+import { GameState, Player, GameSettings } from './types';
 import { getRandomWords } from './words';
 import { filterProfanity } from './validation';
 import { createStore, GameStore } from './store';
@@ -167,7 +167,6 @@ export class GameManager {
 
   private static startTurn(game: GameState): void {
     // Reset turn state
-    game.tldrawSnapshot = undefined; // Clear tldraw snapshot for new turn
     game.guesses = [];
     game.roundScores = {};
     game.timeRemaining = game.settings.timePerRound;
@@ -223,30 +222,6 @@ export class GameManager {
     game.turnStartTime = Date.now(); // Start timer now
     game.wordSelectionDeadline = undefined;
     game.lastActivity = Date.now();
-  }
-
-  static updateDrawing(roomId: string, update: DrawingUpdate) {
-    return this.run<{ success: boolean; gameState?: GameState; error?: string }>(roomId, (game) => {
-      if (game.status !== 'playing') {
-        return { success: false, error: 'Game not in progress' };
-      }
-
-      // Only allow the current drawer to update the drawing
-      if (game.currentDrawer !== update.playerId) {
-        return { success: false, error: 'Only the current drawer can update the drawing' };
-      }
-
-      if (update.type === 'tldraw_snapshot' && update.tldrawSnapshot) {
-        game.tldrawSnapshot = {
-          snapshot: update.tldrawSnapshot,
-          lastUpdatedBy: update.playerId,
-          timestamp: Date.now()
-        };
-      }
-
-      game.lastActivity = Date.now();
-      return { success: true, gameState: game };
-    });
   }
 
   static submitGuess(roomId: string, playerId: string, guess: string) {
