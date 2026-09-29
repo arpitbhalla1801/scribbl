@@ -1,8 +1,8 @@
 import { randomInt, randomUUID } from 'crypto';
-import { GameState, Player, GameSettings } from './types';
-import { getRandomWords } from './words';
-import { filterProfanity } from './validation';
-import { createStore, GameStore } from './store';
+import type { GameState, Player, GameSettings } from './types';
+import { getRandomWords } from './words.ts';
+import { filterProfanity } from './validation.ts';
+import { createStore, type GameStore } from './store.ts';
 
 declare global {
   var gameStore: GameStore | undefined;

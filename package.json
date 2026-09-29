@@ -9,7 +9,7 @@
     "start": "NODE_ENV=production node server.js",
     "start:next": "next start",
     "lint": "next lint",
-    "test": "node --test --test-force-exit src/lib/store.test.ts src/lib/rateLimit.test.ts src/lib/session.test.ts"
+    "test": "node --test --test-force-exit src/lib/store.test.ts src/lib/rateLimit.test.ts src/lib/session.test.ts src/lib/gameManager.test.ts"
   },
   "dependencies": {
     "@tldraw/sync": "^3.14.2",
