@@ -18,7 +18,7 @@ export async function GET(
     // Rate limiting - use playerId for per-player limits on polling endpoint
     // This prevents players on the same IP from sharing rate limits
     const rateLimitId = playerId || getClientIdentifier(request);
-    const rateLimitResult = apiRateLimiter(rateLimitId);
+    const rateLimitResult = await apiRateLimiter(rateLimitId);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
@@ -75,7 +75,7 @@ export async function DELETE(
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimitResult = apiRateLimiter(clientId);
+    const rateLimitResult = await apiRateLimiter(clientId);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(

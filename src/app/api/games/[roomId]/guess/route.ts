@@ -12,7 +12,7 @@ export async function POST(
   try {
     // Rate limiting - per client to prevent spam
     const clientId = getClientIdentifier(request);
-    const rateLimitResult = guessRateLimiter(clientId);
+    const rateLimitResult = await guessRateLimiter(clientId);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(

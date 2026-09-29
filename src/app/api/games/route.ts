@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimitResult = createGameRateLimiter(clientId);
+    const rateLimitResult = await createGameRateLimiter(clientId);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
