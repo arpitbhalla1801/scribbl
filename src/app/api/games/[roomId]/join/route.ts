@@ -5,6 +5,7 @@ import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername, validateRoomId } from '@/lib/validation';
 import { setSessionCookie } from '@/lib/session';
 import { attachPlayerToUser } from '@/lib/playerLink';
+import { recordGameJoinEvent } from '@/lib/events';
 import { logger } from '@/lib/logger';
 
 export async function POST(
@@ -76,7 +77,8 @@ export async function POST(
       gameState: game
     });
     setSessionCookie(response, roomId, result.player!.id);
-    await attachPlayerToUser(request.headers, roomId, result.player!.id);
+    const userId = await attachPlayerToUser(request.headers, roomId, result.player!.id);
+    await recordGameJoinEvent(userId, roomId);
     return response;
 
   } catch (error) {

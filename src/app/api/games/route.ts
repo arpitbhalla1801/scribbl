@@ -6,6 +6,7 @@ import { validateUsername } from '@/lib/validation';
 import { initializeServer } from '@/lib/serverInit';
 import { setSessionCookie } from '@/lib/session';
 import { attachPlayerToUser } from '@/lib/playerLink';
+import { recordGameJoinEvent } from '@/lib/events';
 import { logger } from '@/lib/logger';
 
 // Initialize server services on first API call
@@ -100,7 +101,8 @@ export async function POST(request: NextRequest) {
       gameState
     });
     setSessionCookie(response, gameState.roomId, gameState.players[0].id);
-    await attachPlayerToUser(request.headers, gameState.roomId, gameState.players[0].id);
+    const userId = await attachPlayerToUser(request.headers, gameState.roomId, gameState.players[0].id);
+    await recordGameJoinEvent(userId, gameState.roomId);
     return response;
 
   } catch (error) {

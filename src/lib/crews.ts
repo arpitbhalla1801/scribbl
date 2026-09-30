@@ -22,6 +22,20 @@ function membershipId(crewId: string, userId: string): string {
   return `${crewId}:${userId}`;
 }
 
+// #58: cheap membership check for event metadata - takes a userId directly
+// (not headers/session) since the caller (events.ts) already resolved it.
+export async function hasAnyCrew(userId: string): Promise<boolean> {
+  if (!process.env.DATABASE_URL) return false;
+
+  try {
+    const [row] = await db.select({ id: crewMembers.id }).from(crewMembers).where(eq(crewMembers.userId, userId)).limit(1);
+    return !!row;
+  } catch (error) {
+    logger.warn('Failed to check crew membership', { error, userId });
+    return false;
+  }
+}
+
 async function currentUserId(headers: Headers): Promise<string | null> {
   const session = await auth.api.getSession({ headers });
   return session?.user?.id ?? null;
