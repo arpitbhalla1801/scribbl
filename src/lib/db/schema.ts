@@ -124,3 +124,23 @@ export const crewMembers = pgTable('crew_members', {
   role: text('role').notNull(), // 'host' | 'player'
   joinedAt: timestamp('joined_at').notNull().defaultNow(),
 });
+
+// #43: a single-use invite (a link is just this code in a URL). No time
+// expiry per the issue - it lives until accepted or cancelled. 'declined'
+// is part of the status enum per the issue's spec but has no caller yet -
+// there's no specific invitee to decline against until invites can target
+// a particular user, not just a shareable code.
+export const crewInvites = pgTable('crew_invites', {
+  id: text('id').primaryKey(), // UUID v7 (#41)
+  crewId: text('crew_id')
+    .notNull()
+    .references(() => crews.id, { onDelete: 'cascade' }),
+  code: text('code').notNull().unique(),
+  createdByUserId: text('created_by_user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'declined' | 'cancelled'
+  acceptedByUserId: text('accepted_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  respondedAt: timestamp('responded_at'),
+});
