@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 // BetterAuth's required core tables (user/session/account/verification),
 // plus isAnonymous for the anonymous-upgrade plugin. Column shapes follow
@@ -143,4 +143,19 @@ export const crewInvites = pgTable('crew_invites', {
   acceptedByUserId: text('accepted_by_user_id').references(() => user.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   respondedAt: timestamp('responded_at'),
+});
+
+// #58/#60: light event log. userId is nullable (best-effort, same as
+// playerLinks - no DATABASE_URL/session just means the event is skipped,
+// never a blocked action). One event type ('game_joined') carries both
+// baselines this is meant to compare: metadata.isReturn (D7 return,
+// regardless of crew - #60's baseline) and metadata.hasCrew (so a later
+// query can split that same D7 rate by crew membership - #58's north
+// star), rather than two separate tracking mechanisms.
+export const events = pgTable('events', {
+  id: text('id').primaryKey(), // UUID v7 (#41)
+  userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+  type: text('type').notNull(),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });

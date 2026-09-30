@@ -9,23 +9,29 @@ import { logger } from './logger.ts';
 // best-effort groundwork for #42/#47/#48. A missing DATABASE_URL, a missing
 // session, or a lookup failure should never block joining or creating a
 // game, so every failure mode here just no-ops.
+//
+// Returns the resolved userId (or null) so callers that need it too - e.g.
+// #58/#60's recordGameJoinEvent - can reuse this session lookup instead of
+// fetching the session a second time.
 export async function attachPlayerToUser(
   headers: Headers,
   roomId: string,
   playerId: string
-): Promise<void> {
-  if (!process.env.DATABASE_URL) return;
+): Promise<string | null> {
+  if (!process.env.DATABASE_URL) return null;
 
   try {
     const session = await auth.api.getSession({ headers });
-    if (!session?.user) return;
+    if (!session?.user) return null;
 
     await db
       .insert(playerLinks)
       .values({ playerId, roomId, userId: session.user.id })
       .onConflictDoNothing();
+    return session.user.id;
   } catch (error) {
     logger.warn('Failed to link player to user', { error, roomId, playerId });
+    return null;
   }
 }
 
