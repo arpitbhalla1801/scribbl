@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { anonymous } from 'better-auth/plugins';
+import { v7 as uuidv7 } from 'uuid';
 import { db } from './db.ts';
 import * as schema from './db/schema.ts';
 
@@ -18,4 +19,12 @@ export const auth = betterAuth({
     },
   },
   plugins: [anonymous()],
+  // #41: UUID v7 for DB entity IDs (user/session/account/verification) -
+  // time-ordered, so inserts stay index-local instead of scattering across
+  // the btree the way v4's pure randomness does.
+  advanced: {
+    database: {
+      generateId: () => uuidv7(),
+    },
+  },
 });

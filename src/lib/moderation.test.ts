@@ -86,6 +86,8 @@ test('submitReport resolves both sides best-effort and saves the report', async 
   assert.equal(inserted.length, 1);
   assert.equal((inserted[0] as { reportedName: string }).reportedName, 'Bob');
   assert.equal((inserted[0] as { reportedUserId: string }).reportedUserId, 'reported-1');
+  // #41: DB entity ids are UUID v7 - version nibble '7' at the standard position.
+  assert.match((inserted[0] as { id: string }).id, /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 });
 
 test('submitReport still saves the report when the target was never linked to a user', async (t) => {
