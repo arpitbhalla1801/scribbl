@@ -15,6 +15,10 @@ interface EnvConfig {
   // (see session.ts)
   SESSION_SECRET?: string;
 
+  // Neon Postgres connection string - optional. Without it, BetterAuth
+  // sign-in (#37/#38) silently no-ops; gameplay never depends on it.
+  DATABASE_URL?: string;
+
   // Node environment
   NODE_ENV: string;
 }
@@ -27,6 +31,7 @@ export function getEnvConfig(): EnvConfig {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     REDIS_URL: process.env.REDIS_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
+    DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV || 'development',
   };
 
