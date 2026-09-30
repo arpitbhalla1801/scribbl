@@ -9,7 +9,7 @@
     "start": "NODE_ENV=production node server.js",
     "start:next": "next start",
     "lint": "next lint",
-    "test": "node --test --test-force-exit src/lib/store.test.ts src/lib/rateLimit.test.ts src/lib/session.test.ts src/lib/gameManager.test.ts src/lib/validation.test.ts src/lib/logger.test.ts src/lib/playerLink.test.ts src/lib/moderation.test.ts",
+    "test": "node --test --test-force-exit src/lib/store.test.ts src/lib/rateLimit.test.ts src/lib/session.test.ts src/lib/gameManager.test.ts src/lib/validation.test.ts src/lib/logger.test.ts src/lib/playerLink.test.ts src/lib/moderation.test.ts src/lib/crews.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push"
   },
