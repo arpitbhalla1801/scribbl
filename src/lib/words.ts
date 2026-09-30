@@ -1,5 +1,6 @@
 // Import the curated drawable words array
 import { drawableWords } from '../words/drawable_words.ts';
+import { logger } from './logger.ts';
 
 interface WordDifficulty {
   easy: string[];
@@ -67,6 +68,5 @@ export function getWordStats() {
 
 // Log word stats for verification
 if (typeof window === 'undefined') {
-  const stats = getWordStats();
-  console.log('📝 Drawable words loaded:', stats);
+  logger.info('Drawable words loaded', getWordStats());
 }

@@ -3,6 +3,7 @@ import { GameManager } from '@/lib/gameManager';
 import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { setSessionCookie, verifySession } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -78,7 +79,7 @@ export async function POST(
     return response;
 
   } catch (error) {
-    console.error('Error selecting word:', error);
+    logger.error('Error selecting word', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

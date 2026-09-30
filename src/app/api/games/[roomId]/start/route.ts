@@ -4,6 +4,7 @@ import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 import { setSessionCookie, verifySession } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -75,7 +76,7 @@ export async function POST(
     return response;
 
   } catch (error) {
-    console.error('Error starting game:', error);
+    logger.error('Error starting game', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

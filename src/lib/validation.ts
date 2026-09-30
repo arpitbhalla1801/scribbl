@@ -1,69 +1,23 @@
-// Profanity filter
-// For production, consider using a library like 'bad-words' or 'leo-profanity'
-// This is a basic implementation with common inappropriate words
+// Profanity filter, via the maintained `obscenity` dataset/matcher rather
+// than a hand-rolled wordlist. The recommended transformers already handle
+// leetspeak ("sh1t") and confusable characters.
+import { RegExpMatcher, TextCensor, englishDataset, englishRecommendedTransformers, fixedPhraseCensorStrategy } from 'obscenity';
 
-const badWords = [
-  // Common profanity (add more as needed)
-  'fuck', 'shit', 'bitch', 'damn', 'ass', 'bastard', 'crap', 'hell',
-  'piss', 'dick', 'cock', 'pussy', 'cunt', 'slut', 'whore', 'fag',
-  'nigger', 'nigga', 'retard', 'rape', 'nazi', 'kike', 'spic',
-  // Common variations and obfuscations
-  'fuk', 'fck', 'shyt', 'btch', 'azz', 'dck', 'psssy', 'cnt',
-  // Add more as needed based on your community
-];
-
-// Common leetspeak substitutions
-const leetSpeakMap: Record<string, string> = {
-  '0': 'o',
-  '1': 'i',
-  '3': 'e',
-  '4': 'a',
-  '5': 's',
-  '7': 't',
-  '8': 'b',
-  '@': 'a',
-  '$': 's',
-  '!': 'i',
-};
-
-function normalizeLeetSpeak(text: string): string {
-  return text
-    .toLowerCase()
-    .split('')
-    .map(char => leetSpeakMap[char] || char)
-    .join('');
-}
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
 export function containsProfanity(text: string): boolean {
-  const normalized = normalizeLeetSpeak(text.toLowerCase());
-  
-  // Remove spaces and special characters for checking
-  const cleaned = normalized.replace(/[^a-z0-9]/g, '');
-  const withSpaces = normalized.replace(/[^a-z0-9\s]/g, ' ');
-  
-  return badWords.some(word => {
-    const cleanWord = word.replace(/[^a-z0-9]/g, '');
-    // Check both cleaned (no spaces) and with spaces versions
-    // Use word boundaries for more accurate matching
-    const wordPattern = new RegExp(`\\b${word}\\b`, 'i');
-    return cleaned.includes(cleanWord) || 
-           wordPattern.test(withSpaces) ||
-           wordPattern.test(normalized);
-  });
+  return matcher.hasMatch(text);
 }
 
 export function filterProfanity(text: string, replacement: string = '***'): string {
-  if (!containsProfanity(text)) {
-    return text;
-  }
-  
-  let filtered = text;
-  badWords.forEach(word => {
-    const regex = new RegExp(word, 'gi');
-    filtered = filtered.replace(regex, replacement);
-  });
-  
-  return filtered;
+  const matches = matcher.getAllMatches(text);
+  if (matches.length === 0) return text;
+
+  const censor = new TextCensor().setStrategy(fixedPhraseCensorStrategy(replacement));
+  return censor.applyTo(text, matches);
 }
 
 export function validateUsername(username: string): { valid: boolean; error?: string } {

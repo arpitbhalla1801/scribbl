@@ -3,6 +3,7 @@ import type { GameState, Player, GameSettings } from './types';
 import { getRandomWords } from './words.ts';
 import { filterProfanity } from './validation.ts';
 import { createStore, type GameStore } from './store.ts';
+import { logger } from './logger.ts';
 
 declare global {
   var gameStore: GameStore | undefined;
@@ -23,12 +24,41 @@ const HEARTBEAT_TIMEOUT_MS = 5000;
 const WORD_SELECTION_MS = 10000;
 const ROUND_END_REVEAL_MS = 3000;
 
+// A one-edit-away guess still counts, but is worth less than nailing the
+// exact word.
+const TYPO_SCORE_MULTIPLIER = 0.8;
+
 // Room codes are user-typed (6 chars, [A-Z0-9]), so they stay short - but
 // drawn via a CSPRNG rather than Math.random(), which is not suitable for
 // anything security-relevant.
 const ROOM_ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 const NOT_FOUND = { success: false, error: 'Game not found' };
+
+// True if `a` can become `b` with at most one insertion, deletion, or
+// substitution. O(n) rather than full Levenshtein DP since we only ever need
+// to know "is it within 1", not the exact distance.
+export function isOneEditAway(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  let i = 0;
+  let j = 0;
+  let edited = false;
+  while (i < shorter.length && j < longer.length) {
+    if (shorter[i] === longer[j]) {
+      i++;
+      j++;
+      continue;
+    }
+    if (edited) return false;
+    edited = true;
+    if (shorter.length === longer.length) i++; // substitution
+    j++; // insertion/deletion in the longer string
+  }
+  return true;
+}
 
 export class GameManager {
   // Runs a state change atomically, then re-arms the room's timer from the
@@ -250,7 +280,13 @@ export class GameManager {
         return { success: false, error: 'Already guessed correctly' };
       }
 
-      const isCorrect = guess.toLowerCase().trim() === game.currentWord?.toLowerCase().trim();
+      // Accept guesses that are a single edit away from the word (typos like
+      // "firetrucck"), not just exact matches - but worth fewer points (see
+      // TYPO_SCORE_MULTIPLIER below).
+      const normalizedGuess = guess.toLowerCase().trim();
+      const normalizedWord = game.currentWord?.toLowerCase().trim();
+      const isExactMatch = !!normalizedWord && normalizedGuess === normalizedWord;
+      const isCorrect = isExactMatch || (!!normalizedWord && isOneEditAway(normalizedGuess, normalizedWord));
 
       // Filter profanity from the guess text that gets displayed in chat when
       // incorrect (correct guesses are never shown verbatim - see
@@ -273,11 +309,14 @@ export class GameManager {
         const elapsed = Date.now() - (game.turnStartTime || Date.now());
         const timeRemaining = Math.max(0, game.settings.timePerRound - Math.floor(elapsed / 1000));
 
-        // Points: base 100 + up to 100 bonus for speed (linear)
+        // Points: base 100 + up to 100 bonus for speed (linear), discounted
+        // for a typo'd (one-edit-away) guess so it's always worth less than
+        // getting the word exactly right.
         const maxBonus = 100;
         const totalTime = game.settings.timePerRound;
         const bonus = Math.round((timeRemaining / totalTime) * maxBonus);
-        const points = 100 + bonus;
+        const fullPoints = 100 + bonus;
+        const points = isExactMatch ? fullPoints : Math.round(fullPoints * TYPO_SCORE_MULTIPLIER);
 
         player.score += points;
 
@@ -287,10 +326,12 @@ export class GameManager {
         }
         game.roundScores[playerId] += points;
 
-        // Award points to drawer too (half of guesser's points)
+        // Award points to drawer too (half of the full points, regardless of
+        // the guesser's typo discount - the drawer drew it correctly either
+        // way, so their score shouldn't be docked for the guesser's typo).
         const drawer = game.players.find(p => p.id === game.currentDrawer);
         if (drawer) {
-          const drawerPoints = Math.floor(points * 0.5);
+          const drawerPoints = Math.floor(fullPoints * 0.5);
           drawer.score += drawerPoints;
 
           if (!game.roundScores[drawer.id]) {
@@ -441,7 +482,7 @@ export class GameManager {
       this.run(game.roomId, (g) => {
         this.advance(g);
         return { success: true };
-      }).catch((err) => console.error(`[Timer] room ${game.roomId}:`, err));
+      }).catch((err) => logger.error('Timer failed', { roomId: game.roomId, error: err }));
     }, Math.max(0, at - Date.now()) + 50);
     timers.set(game.roomId, timer);
   }

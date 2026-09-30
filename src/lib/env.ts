@@ -2,6 +2,7 @@
  * Environment variable validation
  * This ensures all required environment variables are present and valid
  */
+import { logger } from './logger.ts';
 
 interface EnvConfig {
   // Application URL (for CORS and redirects)
@@ -33,7 +34,7 @@ export function getEnvConfig(): EnvConfig {
   if (config.NODE_ENV === 'production') {
     // Use placeholder if NEXT_PUBLIC_APP_URL is not set in production
     if (!config.NEXT_PUBLIC_APP_URL) {
-      console.warn('⚠️  NEXT_PUBLIC_APP_URL is not set. Using platform URL or localhost as fallback');
+      logger.warn('NEXT_PUBLIC_APP_URL is not set, using platform URL or localhost as fallback');
       // Try to use platform-specific automatic URLs
       config.NEXT_PUBLIC_APP_URL =
         process.env.RENDER_EXTERNAL_URL || // Render
@@ -69,15 +70,9 @@ export function getEnvConfig(): EnvConfig {
 export function validateEnvironment(): void {
   try {
     const config = getEnvConfig();
-    console.log('✓ Environment variables validated successfully');
-    
-    if (config.NODE_ENV === 'development') {
-      console.log('Running in development mode');
-    } else {
-      console.log(`Running in ${config.NODE_ENV} mode`);
-    }
+    logger.info('Environment variables validated successfully', { mode: config.NODE_ENV });
   } catch (error) {
-    console.error('❌ Environment validation failed:', error);
+    logger.error('Environment validation failed', { error });
     if (process.env.NODE_ENV === 'production') {
       // In production, fail fast
       process.exit(1);

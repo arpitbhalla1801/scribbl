@@ -4,6 +4,7 @@ import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 import { verifySession } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -73,7 +74,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Error handling timeout:', error);
+    logger.error('Error handling timeout', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -4,6 +4,7 @@ import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 import { setSessionCookie, verifySession } from '@/lib/session';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -73,7 +74,7 @@ export async function GET(
     return response;
 
   } catch (error) {
-    console.error('Error getting game:', error);
+    logger.error('Error getting game', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -147,7 +148,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Error removing player:', error);
+    logger.error('Error removing player', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

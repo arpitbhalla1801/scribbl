@@ -1,5 +1,6 @@
 // Server initialization - runs once when the server starts
 import { validateEnvironment } from './env';
+import { logger } from './logger.ts';
 
 let initialized = false;
 
@@ -8,8 +9,8 @@ export function initializeServer() {
     return;
   }
 
-  console.log('Initializing server services...');
-  
+  logger.info('Initializing server services');
+
   // Validate environment variables
   validateEnvironment();
 
