@@ -5,6 +5,7 @@ import { createGameRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateUsername } from '@/lib/validation';
 import { initializeServer } from '@/lib/serverInit';
 import { setSessionCookie } from '@/lib/session';
+import { attachPlayerToUser } from '@/lib/playerLink';
 import { logger } from '@/lib/logger';
 
 // Initialize server services on first API call
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
       gameState
     });
     setSessionCookie(response, gameState.roomId, gameState.players[0].id);
+    await attachPlayerToUser(request.headers, gameState.roomId, gameState.players[0].id);
     return response;
 
   } catch (error) {

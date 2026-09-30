@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignInWithDiscord } from "@/components/SignInWithDiscord";
 
 export default function Home() {
   return (
@@ -28,6 +29,10 @@ export default function Home() {
             <Link className="btn-secondary flex-1 text-lg py-4" href="/join">
               Join a room
             </Link>
+          </div>
+
+          <div className="mt-6">
+            <SignInWithDiscord />
           </div>
         </div>
       </main>
