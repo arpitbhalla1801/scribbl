@@ -31,8 +31,11 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex items-center justify-center gap-4">
             <SignInWithDiscord />
+            <Link href="/crews" className="text-secondary text-sm underline underline-offset-2 hover:text-[var(--ink)]">
+              Your crews
+            </Link>
           </div>
         </div>
       </main>
