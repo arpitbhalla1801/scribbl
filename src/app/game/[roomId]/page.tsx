@@ -32,8 +32,17 @@ export default function GamePage() {
   const playerName = urlPlayerName || savedSession?.playerName || "Guest";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [mutedPlayerIds, setMutedPlayerIds] = useState<string[]>([]);
   const welcomeMessageSent = useRef<string | null>(null);
   const reconnectAttempted = useRef(false);
+
+  // #47: fetched once per room-join (not on every poll) - see
+  // getMutedPlayerIdsInRoom for why this isn't wired into the hot path.
+  useEffect(() => {
+    if (roomId) {
+      GameAPI.mutedPlayerIds(roomId).then(setMutedPlayerIds);
+    }
+  }, [roomId]);
 
   // Explicitly tell the server this player is (re)connecting, e.g. after a
   // page reload where the session was restored from storage above.
@@ -156,6 +165,27 @@ export default function GamePage() {
 
   const handleStartGame = () => {
     startGame();
+  };
+
+  const handleVoteKick = (targetPlayerId: string) => {
+    GameAPI.voteKick(roomId, playerId, targetPlayerId).catch(err => {
+      console.error('Error voting to kick:', err);
+    });
+  };
+
+  const handleMute = (targetPlayerId: string, targetName: string) => {
+    setMutedPlayerIds(prev => (prev.includes(targetPlayerId) ? prev : [...prev, targetPlayerId]));
+    GameAPI.setUserRelation(roomId, targetPlayerId, targetName, 'mute').catch(err => {
+      console.error('Error muting player:', err);
+    });
+  };
+
+  const handleReport = (targetPlayerId: string, targetName: string) => {
+    const reason = window.prompt(`Report ${targetName} - what happened?`);
+    if (!reason || !reason.trim()) return;
+    GameAPI.report(roomId, playerId, targetPlayerId, reason.trim()).catch(err => {
+      console.error('Error reporting player:', err);
+    });
   };
 
   const isCurrentPlayerDrawer = (): boolean => {
@@ -385,21 +415,27 @@ export default function GamePage() {
               isDrawing: p.id === gameState.currentDrawer,
             }))}
             currentPlayerId={playerId}
+            onVoteKick={handleVoteKick}
           />
 
           <div className="flex-1 min-h-[300px]">
             <ChatBox
               username={playerName}
               onMessageSend={handleSendMessage}
-              messages={messages.map(m => ({
-                id: m.id,
-                username: m.playerName,
-                text: m.message,
-                isCorrect: m.isCorrect,
-              }))}
+              messages={messages
+                .filter(m => !mutedPlayerIds.includes(m.playerId))
+                .map(m => ({
+                  id: m.id,
+                  playerId: m.playerId,
+                  username: m.playerName,
+                  text: m.message,
+                  isCorrect: m.isCorrect,
+                }))}
               isGuessing={!isCurrentPlayerDrawer() && !hasPlayerGuessedCorrectly() && gameState.status === 'playing'}
               timeLeft={gameState.timeRemaining}
               hasGuessedCorrectly={hasPlayerGuessedCorrectly()}
+              onReport={handleReport}
+              onMute={handleMute}
             />
           </div>
         </div>

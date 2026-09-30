@@ -67,3 +67,36 @@ export const playerLinks = pgTable('player_links', {
     .references(() => user.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+// #47: a block or mute one user placed on another. id is a deterministic
+// `${ownerUserId}:${targetUserId}:${type}` composite rather than a random
+// one plus a separate unique index - keeps "block if not already blocked"
+// and "unblock" both a plain primary-key operation.
+export const userRelations = pgTable('user_relations', {
+  id: text('id').primaryKey(),
+  ownerUserId: text('owner_user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  targetUserId: text('target_user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'block' | 'mute'
+  // Display snapshot only (the in-game name at block time) - not identity,
+  // since a User has no durable username of its own yet.
+  targetName: text('target_name'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// #46: a post-game report against another player, for manual review later
+// (AI OCR/image moderation comes later per the issue - this just captures
+// the report). reporter/reportedUserId are best-effort via playerLinks and
+// may be null if that player was never linked to a signed-in user.
+export const reports = pgTable('reports', {
+  id: text('id').primaryKey(),
+  roomId: text('room_id').notNull(),
+  reporterUserId: text('reporter_user_id').references(() => user.id, { onDelete: 'set null' }),
+  reportedUserId: text('reported_user_id').references(() => user.id, { onDelete: 'set null' }),
+  reportedName: text('reported_name').notNull(),
+  reason: text('reason').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
