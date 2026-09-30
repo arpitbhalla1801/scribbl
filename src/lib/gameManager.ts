@@ -562,8 +562,12 @@ export class GameManager {
   }
 
   private static generatePlayerId(): string {
-    // playerId doubles as the sole bearer credential for acting as a given
-    // player, so it needs to be unguessable - randomUUID() is CSPRNG-backed.
+    // Deliberately NOT UUID v7 (see #41) despite that being the DB-entity
+    // convention elsewhere - playerId doubles as the sole bearer credential
+    // for acting as a given player, so it needs to be unguessable. v7's
+    // leading timestamp bits make it more predictable than v4, which is
+    // exactly wrong for something that has to work as a secret.
+    // randomUUID() is CSPRNG-backed v4.
     return randomUUID();
   }
 
