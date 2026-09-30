@@ -185,6 +185,45 @@ test('leaveGame reassigns host and deletes empty rooms', async () => {
   assert.equal(gone, null);
 });
 
+test('voteKick rejects self-votes and duplicate votes, kicks on strict majority', async () => {
+  const { roomId, players } = await makeGame(3);
+  const [a, b, c] = players;
+
+  const self = await GameManager.voteKick(roomId, a.id, a.id);
+  assert.equal(self.success, false);
+  assert.match(self.error!, /yourself/i);
+
+  const first = await GameManager.voteKick(roomId, a.id, c.id);
+  assert.equal(first.success, true);
+  assert.equal(first.kicked, false); // 1 of 2 eligible voters isn't a majority yet
+
+  const again = await GameManager.voteKick(roomId, a.id, c.id);
+  assert.equal(again.success, false);
+  assert.match(again.error!, /already voted/i);
+
+  const second = await GameManager.voteKick(roomId, b.id, c.id);
+  assert.equal(second.success, true);
+  assert.equal(second.kicked, true);
+
+  const state = await GameManager.getGame(roomId);
+  assert.equal(state!.players.some(p => p.id === c.id), false);
+  assert.equal(state!.players.length, 2);
+});
+
+test('voteKick on the current drawer ends the turn like leaving does', async () => {
+  const { roomId, players } = await makeGame(2);
+  await GameManager.startGame(roomId, players[0].id);
+  const state = await GameManager.getGame(roomId);
+  const drawerId = state!.currentDrawer!;
+  const otherId = players.find(p => p.id !== drawerId)!.id;
+  await GameManager.selectWord(roomId, drawerId, 0);
+
+  const result = await GameManager.voteKick(roomId, otherId, drawerId);
+  assert.equal(result.success, true);
+  assert.equal(result.kicked, true); // 1 of 1 eligible voter is a majority
+  assert.equal(result.gameState!.status, 'round-end');
+});
+
 test('handleTimeOut refuses to end a turn before its time is up', async () => {
   const { roomId, players } = await makeGame(2);
   await GameManager.startGame(roomId, players[0].id);

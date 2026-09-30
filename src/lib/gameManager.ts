@@ -101,6 +101,7 @@ export class GameManager {
         guesses: [],
         roundScores: {},
         drawingOrder: [],
+        voteKicks: {},
         createdAt: Date.now(),
         lastActivity: Date.now(),
       };
@@ -199,6 +200,7 @@ export class GameManager {
     // Reset turn state
     game.guesses = [];
     game.roundScores = {};
+    game.voteKicks = {};
     game.timeRemaining = game.settings.timePerRound;
     game.turnStartTime = undefined; // Don't start timer until word is selected
     game.roundEndDeadline = undefined;
@@ -374,26 +376,11 @@ export class GameManager {
   static async leaveGame(roomId: string, playerId: string): Promise<{ success: boolean; error?: string }> {
     let empty = false;
     const result = await this.run<{ success: boolean; error?: string }>(roomId, (game) => {
-      const playerIndex = game.players.findIndex(p => p.id === playerId);
-      if (playerIndex === -1) {
+      if (!game.players.some(p => p.id === playerId)) {
         return { success: false, error: 'Player not found' };
       }
 
-      const leavingPlayer = game.players[playerIndex];
-
-      // Remove player from game
-      game.players.splice(playerIndex, 1);
-
-      // If the leaving player was the host, assign new host
-      if (leavingPlayer.isHost && game.players.length > 0) {
-        game.players[0].isHost = true;
-      }
-
-      // If the leaving player was the current drawer, end the turn
-      if (game.currentDrawer === playerId && game.status === 'playing') {
-        this.endTurn(game);
-      }
-
+      this.removePlayer(game, playerId);
       empty = game.players.length === 0;
       game.lastActivity = Date.now();
       return { success: true };
@@ -405,6 +392,62 @@ export class GameManager {
       await store.delete(roomId);
     }
     return result;
+  }
+
+  // Shared by leaveGame and voteKick: drops a player, reassigns host, and
+  // ends the turn if they were mid-draw. Caller is responsible for checking
+  // the player exists first.
+  private static removePlayer(game: GameState, playerId: string): void {
+    const playerIndex = game.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    const removedPlayer = game.players[playerIndex];
+    game.players.splice(playerIndex, 1);
+
+    if (removedPlayer.isHost && game.players.length > 0) {
+      game.players[0].isHost = true;
+    }
+
+    if (game.currentDrawer === playerId && game.status === 'playing') {
+      this.endTurn(game);
+    }
+
+    delete game.voteKicks[playerId];
+  }
+
+  // #46: any player can vote to kick another. A strict majority of the
+  // *other* online players (so a 2-player room kicks on a single vote,
+  // matching what "majority" means with only one other voter) removes the
+  // target immediately, same as if they'd left.
+  static voteKick(roomId: string, voterId: string, targetId: string) {
+    return this.run<{ success: boolean; kicked?: boolean; gameState?: GameState; error?: string }>(
+      roomId,
+      (game) => {
+        if (voterId === targetId) {
+          return { success: false, error: 'Can’t vote to kick yourself' };
+        }
+        if (!game.players.some(p => p.id === voterId)) {
+          return { success: false, error: 'Player not found' };
+        }
+        if (!game.players.some(p => p.id === targetId)) {
+          return { success: false, error: 'Target not in this game' };
+        }
+
+        const votes = game.voteKicks[targetId] ?? (game.voteKicks[targetId] = []);
+        if (votes.includes(voterId)) {
+          return { success: false, error: 'Already voted to kick this player' };
+        }
+        votes.push(voterId);
+
+        const eligibleVoters = game.players.filter(p => p.id !== targetId && p.isOnline).length;
+        const threshold = Math.floor(eligibleVoters / 2) + 1;
+        const kicked = votes.length >= threshold;
+        if (kicked) this.removePlayer(game, targetId);
+
+        game.lastActivity = Date.now();
+        return { success: true, kicked, gameState: game };
+      }
+    );
   }
 
   // Reveal the word for a few seconds before moving on, so players can see

@@ -10,6 +10,7 @@ interface Player {
 interface PlayerListProps {
   players: Player[];
   currentPlayerId?: string;
+  onVoteKick?: (targetPlayerId: string) => void;
 }
 
 const AVATAR_COLORS = ['#3e7cff', '#ff4d4d', '#22c55e', '#ffb800', '#9b5de5', '#ff8fa3', '#2fbfbf', '#f97316'];
@@ -19,7 +20,7 @@ function avatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-const PlayerList: React.FC<PlayerListProps> = ({ players, currentPlayerId }) => {
+const PlayerList: React.FC<PlayerListProps> = ({ players, currentPlayerId, onVoteKick }) => {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
   return (
@@ -59,6 +60,18 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, currentPlayerId }) => 
               <span className="font-bold tabular-nums flex-shrink-0" style={{ fontFamily: 'var(--font-display)' }}>
                 {player.score}
               </span>
+
+              {onVoteKick && !isMe && (
+                <button
+                  type="button"
+                  onClick={() => onVoteKick(player.id)}
+                  title={`Vote to kick ${player.username}`}
+                  aria-label={`Vote to kick ${player.username}`}
+                  className="text-muted hover:text-red-500 flex-shrink-0 text-xs px-1"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           );
         })}
