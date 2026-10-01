@@ -4,6 +4,8 @@ import { apiRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
 import { validateRoomId } from '@/lib/validation';
 import { sanitizeGameStateForPlayer } from '@/lib/gameStateSanitizer';
 import { setSessionCookie, verifySession } from '@/lib/session';
+import { resolveUserId } from '@/lib/playerLink';
+import { recordEvent } from '@/lib/events';
 import { logger } from '@/lib/logger';
 
 export async function POST(
@@ -37,6 +39,14 @@ export async function POST(
     const result = await GameManager.voteKick(roomId, playerId, targetPlayerId);
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    // #48: a successful kick is a reputation signal against the target.
+    // Best-effort - resolveUserId returns null if they were never linked,
+    // which just means there's nothing to log yet.
+    if (result.kicked) {
+      const targetUserId = await resolveUserId(roomId, targetPlayerId);
+      await recordEvent(targetUserId, 'vote_kicked', { roomId });
     }
 
     const game = await GameManager.getGame(roomId, playerId);
