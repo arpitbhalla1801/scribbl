@@ -37,6 +37,7 @@ export interface GameState {
   }>;
   roundScores: Record<string, number>;
   drawingOrder: string[]; // Order in which players will draw
+  voteKicks: Record<string, string[]>; // targetPlayerId -> voter playerIds, reset each turn
   createdAt: number;
   lastActivity: number;
 }

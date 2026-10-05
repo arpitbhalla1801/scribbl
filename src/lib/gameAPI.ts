@@ -215,4 +215,66 @@ export class GameAPI {
       };
     }
   }
+
+  static async voteKick(roomId: string, playerId: string, targetPlayerId: string): Promise<{
+    success: boolean;
+    kicked?: boolean;
+    gameState?: GameState;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`/api/games/${roomId}/vote-kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, targetPlayerId }),
+      });
+      return await response.json();
+    } catch {
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  static async report(roomId: string, playerId: string, targetPlayerId: string, reason: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`/api/games/${roomId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, targetPlayerId, reason }),
+      });
+      return await response.json();
+    } catch {
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  static async mutedPlayerIds(roomId: string): Promise<string[]> {
+    try {
+      const response = await fetch(`/api/games/${roomId}/muted-players`);
+      const data = await response.json();
+      return data.mutedPlayerIds ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  static async setUserRelation(
+    roomId: string,
+    targetPlayerId: string,
+    targetName: string,
+    type: 'block' | 'mute'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch('/api/users/relations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, targetPlayerId, targetName, type }),
+      });
+      return await response.json();
+    } catch {
+      return { success: false, error: 'Network error' };
+    }
+  }
 }

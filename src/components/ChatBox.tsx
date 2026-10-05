@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 
 interface Message {
   id: string;
+  playerId?: string;
   username: string;
   text: string;
   isCorrect?: boolean;
@@ -16,6 +17,8 @@ interface ChatBoxProps {
   isGuessing: boolean;
   timeLeft?: number;
   hasGuessedCorrectly?: boolean;
+  onReport?: (playerId: string, username: string) => void;
+  onMute?: (playerId: string, username: string) => void;
 }
 
 const ChatBox: React.FC<ChatBoxProps> = ({
@@ -24,7 +27,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   messages,
   isGuessing,
   timeLeft,
-  hasGuessedCorrectly = false
+  hasGuessedCorrectly = false,
+  onReport,
+  onMute,
 }) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -83,9 +88,35 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 }
               >
                 {!isSystem && (
-                  <div className="font-bold mb-0.5 text-xs opacity-80">
-                    {isMe ? 'You' : msg.username}
-                    {msg.isCorrect && <span className="ml-1">✓</span>}
+                  <div className="font-bold mb-0.5 text-xs opacity-80 flex items-center gap-1.5">
+                    <span>
+                      {isMe ? 'You' : msg.username}
+                      {msg.isCorrect && <span className="ml-1">✓</span>}
+                    </span>
+                    {!isMe && msg.playerId && (onReport || onMute) && (
+                      <span className="flex items-center gap-1 opacity-70">
+                        {onMute && (
+                          <button
+                            type="button"
+                            onClick={() => onMute(msg.playerId!, msg.username)}
+                            title={`Mute ${msg.username}`}
+                            className="hover:opacity-100 text-[10px] underline"
+                          >
+                            mute
+                          </button>
+                        )}
+                        {onReport && (
+                          <button
+                            type="button"
+                            onClick={() => onReport(msg.playerId!, msg.username)}
+                            title={`Report ${msg.username}`}
+                            className="hover:opacity-100 text-[10px] underline"
+                          >
+                            report
+                          </button>
+                        )}
+                      </span>
+                    )}
                   </div>
                 )}
                 <div className="break-words">{msg.text}</div>

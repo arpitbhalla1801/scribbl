@@ -1,3 +1,4 @@
+import { and, eq } from 'drizzle-orm';
 import { auth } from './auth.ts';
 import { db } from './db.ts';
 import { playerLinks } from './db/schema.ts';
@@ -25,5 +26,26 @@ export async function attachPlayerToUser(
       .onConflictDoNothing();
   } catch (error) {
     logger.warn('Failed to link player to user', { error, roomId, playerId });
+  }
+}
+
+// #46/#47: reverse lookup - a moderation action (block, mute, report) only
+// ever has a target's ephemeral playerId (from the room they were seen in),
+// not their userId. Returns null if the target was never linked (no
+// DATABASE_URL, they never had a session, or the lookup fails) - callers
+// treat that as "can't moderate this player yet", not an error.
+export async function resolveUserId(roomId: string, playerId: string): Promise<string | null> {
+  if (!process.env.DATABASE_URL) return null;
+
+  try {
+    const [row] = await db
+      .select({ userId: playerLinks.userId })
+      .from(playerLinks)
+      .where(and(eq(playerLinks.roomId, roomId), eq(playerLinks.playerId, playerId)))
+      .limit(1);
+    return row?.userId ?? null;
+  } catch (error) {
+    logger.warn('Failed to resolve user for player', { error, roomId, playerId });
+    return null;
   }
 }
