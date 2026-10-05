@@ -1,5 +1,5 @@
-import { randomUUID } from 'crypto';
 import { and, eq, inArray } from 'drizzle-orm';
+import { v7 as uuidv7 } from 'uuid';
 import { auth } from './auth.ts';
 import { db } from './db.ts';
 import { playerLinks, reports, userRelations } from './db/schema.ts';
@@ -152,7 +152,7 @@ export async function submitReport(
     ]);
 
     await db.insert(reports).values({
-      id: randomUUID(),
+      id: uuidv7(), // #41: UUID v7 for DB entity IDs
       roomId,
       reporterUserId,
       reportedUserId,
