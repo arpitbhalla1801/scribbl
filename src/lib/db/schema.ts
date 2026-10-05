@@ -100,3 +100,27 @@ export const reports = pgTable('reports', {
   reason: text('reason').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+// #42: a crew is just a name + who's in it. Membership (crew #43 invites,
+// #44 online status, #58 events) is keyed off crew_members below.
+export const crews = pgTable('crews', {
+  id: text('id').primaryKey(), // UUID v7 (#41)
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// id is a deterministic `${crewId}:${userId}` composite, same reasoning as
+// user_relations - a user is in a given crew at most once, so this doubles
+// as the natural uniqueness constraint. Soft cap of 15 members is enforced
+// in application code (see MAX_CREW_MEMBERS in crews.ts), not here.
+export const crewMembers = pgTable('crew_members', {
+  id: text('id').primaryKey(),
+  crewId: text('crew_id')
+    .notNull()
+    .references(() => crews.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(), // 'host' | 'player'
+  joinedAt: timestamp('joined_at').notNull().defaultNow(),
+});
