@@ -11,12 +11,18 @@ export default function CreateGamePage() {
   const [rounds, setRounds] = useState(3);
   const [timePerRound, setTimePerRound] = useState(60);
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [customWordsText, setCustomWordsText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  const customWords = customWordsText
+    .split(/[,\n]/)
+    .map(w => w.trim())
+    .filter(Boolean);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/games', {
         method: 'POST',
@@ -29,6 +35,7 @@ export default function CreateGamePage() {
             rounds,
             timePerRound,
             difficulty,
+            ...(customWords.length >= 3 ? { customWords } : {}),
           },
         }),
       });
@@ -136,6 +143,27 @@ export default function CreateGamePage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="customWords" className="block text-sm font-semibold text-secondary mb-2">
+                Custom word pack (optional)
+              </label>
+              <textarea
+                id="customWords"
+                value={customWordsText}
+                onChange={(e) => setCustomWordsText(e.target.value)}
+                className="w-full"
+                rows={3}
+                placeholder="Comma or newline separated, e.g: dragon, sandwich, umbrella"
+              />
+              <p className="text-xs text-secondary mt-1">
+                {customWordsText.trim() === ""
+                  ? "Leave blank to use the built-in word lists."
+                  : customWords.length >= 3
+                    ? `${customWords.length} words - difficulty is ignored for custom packs.`
+                    : `Need at least 3 words (${customWords.length} so far) or this will be ignored.`}
+              </p>
             </div>
 
             <div className="flex gap-3 pt-2">

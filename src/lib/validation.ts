@@ -46,6 +46,36 @@ export function validateUsername(username: string): { valid: boolean; error?: st
   return { valid: true };
 }
 
+// #50: a custom word pack needs at least 3 words (one per word-choice slot)
+// and a sane cap so a room doesn't ship a megabyte of settings.
+export function validateCustomWords(words: unknown): { valid: boolean; error?: string; words?: string[] } {
+  if (!Array.isArray(words)) {
+    return { valid: false, error: 'Custom words must be a list' };
+  }
+
+  const cleaned = Array.from(new Set(
+    words
+      .filter((w): w is string => typeof w === 'string')
+      .map(w => w.trim().toLowerCase())
+      .filter(Boolean)
+  ));
+
+  if (cleaned.length < 3) {
+    return { valid: false, error: 'Custom word pack needs at least 3 unique words' };
+  }
+  if (cleaned.length > 100) {
+    return { valid: false, error: 'Custom word pack can have at most 100 words' };
+  }
+  if (cleaned.some(w => w.length > 24 || !/^[a-z0-9' -]+$/.test(w))) {
+    return { valid: false, error: 'Words can only contain letters, numbers, spaces, hyphens, and apostrophes' };
+  }
+  if (cleaned.some(w => containsProfanity(w))) {
+    return { valid: false, error: 'Custom word pack contains inappropriate content' };
+  }
+
+  return { valid: true, words: cleaned };
+}
+
 export function validateRoomId(roomId: string): boolean {
   return /^[A-Z0-9]{6}$/.test(roomId);
 }

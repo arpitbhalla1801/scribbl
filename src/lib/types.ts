@@ -11,6 +11,7 @@ export interface GameSettings {
   rounds: number;
   timePerRound: number;
   difficulty?: 'easy' | 'medium' | 'hard';
+  customWords?: string[]; // If set (>=3 words), used instead of the built-in word lists
 }
 
 export interface GameState {

@@ -1,7 +1,7 @@
 // Run: node --test --test-force-exit src/lib/validation.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { containsProfanity, filterProfanity, validateUsername, validateRoomId } from './validation.ts';
+import { containsProfanity, filterProfanity, validateUsername, validateRoomId, validateCustomWords } from './validation.ts';
 
 test('containsProfanity catches obfuscated variants, not just exact words', () => {
   assert.equal(containsProfanity('this is a nice clean message'), false);
@@ -27,4 +27,16 @@ test('validateRoomId enforces the 6-char uppercase alphanumeric format', () => {
   assert.equal(validateRoomId('AB12CD'), true);
   assert.equal(validateRoomId('ab12cd'), false); // must be uppercase
   assert.equal(validateRoomId('AB12C'), false); // too short
+});
+
+test('validateCustomWords trims, dedupes, and enforces bounds and content', () => {
+  const ok = validateCustomWords(['Dragon', ' sandwich ', 'umbrella', 'dragon']);
+  assert.equal(ok.valid, true);
+  assert.deepEqual(ok.words, ['dragon', 'sandwich', 'umbrella']); // deduped + lowercased
+
+  assert.equal(validateCustomWords(['dragon', 'sandwich']).valid, false); // fewer than 3
+  assert.equal(validateCustomWords(Array.from({ length: 101 }, (_, i) => `word${i}`)).valid, false); // too many
+  assert.equal(validateCustomWords(['dragon', 'sand<wich>', 'umbrella']).valid, false); // bad chars
+  assert.equal(validateCustomWords(['dragon', 'fuck', 'umbrella']).valid, false); // profanity
+  assert.equal(validateCustomWords('not an array').valid, false);
 });

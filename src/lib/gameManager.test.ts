@@ -74,6 +74,19 @@ test('startGame requires the host and at least 2 players', async () => {
   assert.equal(state!.totalTurns, players.length * settings.rounds);
 });
 
+test('startGame uses the custom word pack for word choices when set (#50)', async () => {
+  const customWords = ['dragon', 'sandwich', 'umbrella'];
+  const game = await GameManager.createGame('Host', { ...settings, customWords });
+  await GameManager.joinGame(game.roomId, 'Player1');
+  await GameManager.startGame(game.roomId, game.players[0].id);
+
+  const state = await GameManager.getGame(game.roomId);
+  assert.equal(state!.wordChoices!.length, 3);
+  for (const word of state!.wordChoices!) {
+    assert.ok(customWords.includes(word));
+  }
+});
+
 test('selectWord enforces phase, drawer identity, and choice bounds', async () => {
   const { roomId, players } = await makeGame(2);
   await GameManager.startGame(roomId, players[0].id);
