@@ -9,11 +9,21 @@ interface Crew {
   role: string;
 }
 
+interface Member {
+  userId: string;
+  name: string;
+  role: string;
+  online: boolean;
+}
+
 export default function CrewsPage() {
   const [crews, setCrews] = useState<Crew[]>([]);
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [inviteLinks, setInviteLinks] = useState<Record<string, string>>({});
+  const [expandedCrewId, setExpandedCrewId] = useState<string | null>(null);
+  const [members, setMembers] = useState<Record<string, Member[]>>({});
 
   const loadCrews = async () => {
     const response = await fetch('/api/crews');
@@ -53,6 +63,27 @@ export default function CrewsPage() {
     await loadCrews();
   };
 
+  const handleInvite = async (crewId: string) => {
+    const response = await fetch(`/api/crews/${crewId}/invites`, { method: 'POST' });
+    const data = await response.json();
+    if (!response.ok) return;
+
+    const link = `${window.location.origin}/crews/join/${data.code}`;
+    setInviteLinks(prev => ({ ...prev, [crewId]: link }));
+    navigator.clipboard?.writeText(link).catch(() => {});
+  };
+
+  const handleToggleMembers = async (crewId: string) => {
+    if (expandedCrewId === crewId) {
+      setExpandedCrewId(null);
+      return;
+    }
+    setExpandedCrewId(crewId);
+    const response = await fetch(`/api/crews/${crewId}/members`);
+    const data = await response.json();
+    if (response.ok) setMembers(prev => ({ ...prev, [crewId]: data.members }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md">
@@ -84,14 +115,46 @@ export default function CrewsPage() {
           ) : (
             <div className="space-y-2">
               {crews.map((crew) => (
-                <div key={crew.id} className="flex items-center justify-between p-3 rounded-xl border-2" style={{ borderColor: 'var(--card-border)' }}>
-                  <div>
-                    <div className="font-semibold text-primary">{crew.name}</div>
-                    <div className="text-xs text-muted capitalize">{crew.role}</div>
+                <div key={crew.id} className="p-3 rounded-xl border-2" style={{ borderColor: 'var(--card-border)' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-primary">{crew.name}</div>
+                      <div className="text-xs text-muted capitalize">{crew.role}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleToggleMembers(crew.id)} className="btn-secondary !py-1.5 !px-3 !text-sm">
+                        Members
+                      </button>
+                      <button onClick={() => handleInvite(crew.id)} className="btn-secondary !py-1.5 !px-3 !text-sm">
+                        Invite
+                      </button>
+                      <button onClick={() => handleLeave(crew.id)} className="btn-secondary !py-1.5 !px-3 !text-sm">
+                        Leave
+                      </button>
+                    </div>
                   </div>
-                  <button onClick={() => handleLeave(crew.id)} className="btn-secondary !py-1.5 !px-3 !text-sm">
-                    Leave
-                  </button>
+
+                  {inviteLinks[crew.id] && (
+                    <p className="text-xs text-muted mt-2 break-all">
+                      Copied: {inviteLinks[crew.id]}
+                    </p>
+                  )}
+
+                  {expandedCrewId === crew.id && (
+                    <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: 'var(--card-border)' }}>
+                      {(members[crew.id] ?? []).map((member) => (
+                        <div key={member.userId} className="flex items-center gap-2 text-sm">
+                          <span
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ background: member.online ? 'var(--marker-green)' : 'var(--text-muted)' }}
+                            aria-label={member.online ? 'Online' : 'Offline'}
+                          />
+                          <span className="text-primary">{member.name}</span>
+                          <span className="text-xs text-muted capitalize">{member.role}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
