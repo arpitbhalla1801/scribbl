@@ -1,6 +1,6 @@
 import { randomInt, randomUUID } from 'crypto';
 import type { GameState, Player, GameSettings } from './types';
-import { getRandomWords } from './words.ts';
+import { getRandomWords, pickRandomWords } from './words.ts';
 import { filterProfanity } from './validation.ts';
 import { createStore, type GameStore } from './store.ts';
 import { logger } from './logger.ts';
@@ -220,8 +220,11 @@ export class GameManager {
       game.currentDrawer = eligibleDrawOrder[playerIndex];
     }
 
-    // Choose 3 random words for the drawer to select from
-    game.wordChoices = getRandomWords(game.settings.difficulty || 'medium', 3);
+    // Choose 3 random words for the drawer to select from - a validated
+    // custom word pack (#50) takes priority over the built-in lists.
+    game.wordChoices = game.settings.customWords?.length
+      ? pickRandomWords(game.settings.customWords, 3)
+      : getRandomWords(game.settings.difficulty || 'medium', 3);
     game.currentWord = undefined; // No word selected yet
     game.status = 'word-selection';
     game.wordSelectionDeadline = Date.now() + WORD_SELECTION_MS;

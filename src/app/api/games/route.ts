@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GameManager } from '@/lib/gameManager';
 import { CreateGameRequest } from '@/lib/types';
 import { createGameRateLimiter, getClientIdentifier } from '@/lib/rateLimit';
-import { validateUsername } from '@/lib/validation';
+import { validateUsername, validateCustomWords } from '@/lib/validation';
 import { initializeServer } from '@/lib/serverInit';
 import { setSessionCookie } from '@/lib/session';
 import { attachPlayerToUser } from '@/lib/playerLink';
@@ -84,10 +84,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate custom word pack, if provided
+    let customWords: string[] | undefined;
+    if (settings.customWords !== undefined) {
+      const customWordsValidation = validateCustomWords(settings.customWords);
+      if (!customWordsValidation.valid) {
+        return NextResponse.json(
+          { error: customWordsValidation.error },
+          { status: 400 }
+        );
+      }
+      customWords = customWordsValidation.words;
+    }
+
     // Provide default difficulty if not specified
     const gameSettings = {
       ...settings,
-      difficulty: settings.difficulty || 'medium'
+      difficulty: settings.difficulty || 'medium',
+      customWords,
     };
 
     // Create the game

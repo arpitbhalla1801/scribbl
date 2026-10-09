@@ -32,20 +32,24 @@ const categorizeWords = (): WordDifficulty => {
 
 const wordsByDifficulty = categorizeWords();
 
-export function getRandomWords(difficulty: 'easy' | 'medium' | 'hard', count: number = 1): string[] {
-  const words = wordsByDifficulty[difficulty];
+// Picks `count` distinct random words from `pool`, without replacement.
+export function pickRandomWords(pool: string[], count: number): string[] {
   const selectedWords: string[] = [];
-  
-  for (let i = 0; i < count && i < words.length; i++) {
+
+  for (let i = 0; i < count && i < pool.length; i++) {
     let randomWord: string;
     do {
-      randomWord = words[Math.floor(Math.random() * words.length)];
+      randomWord = pool[Math.floor(Math.random() * pool.length)];
     } while (selectedWords.includes(randomWord));
-    
+
     selectedWords.push(randomWord);
   }
-  
+
   return selectedWords;
+}
+
+export function getRandomWords(difficulty: 'easy' | 'medium' | 'hard', count: number = 1): string[] {
+  return pickRandomWords(wordsByDifficulty[difficulty], count);
 }
 
 export function getRandomWord(difficulty: 'easy' | 'medium' | 'hard'): string {
